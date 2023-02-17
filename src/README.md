@@ -1,1 +1,1 @@
-# some tect about our code :)
+# some text about our code :)
