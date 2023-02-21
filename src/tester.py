@@ -7,6 +7,16 @@ from typing import List, Dict, Any
 
 
 class Tester:
+    # Avalable datasets for testing:
+    ADULT_D = "Adult Dataset"
+    COMPAS_D = "Compas Dataset"
+    DUMMY_D = "Dummy Dataset"
+
+    # Available bias mitigation methods
+    FAIRBALANCE = "FairBalance Bias Mitigation"
+    FAIRMASK = "FairMask Bias Mitigation"
+    BASE_ML = "No Bias Mitigation"
+
     def __init__(self, output_filename) -> None:
         self._initd_data = {}
         self._file = output_filename + ".csv"
@@ -29,27 +39,23 @@ class Tester:
         self.save_test_results(evals, dataset, bias_mit, ml_method, bias_ml_method, sensitive_attr)
         return X, y, preds
 
-    def _evaluate(self, metrics: Metrics, metric_names):
+
+    def _evaluate(self, metrics: Metrics, metric_names: List[str]):
         evals = {}
-        if "acc" in metric_names:
-            evals["acc"] = metrics.accuracy()
-            print(evals)
-        if "rec" in metric_names:
-            pass
-        if "etc" in metric_names:
-            pass
-        return evals    
+        for name in metric_names:
+            evals[name] = metrics.get(name)
+        return evals 
 
     def _get_dataset(self, name) -> Data:
         if name in self._initd_data:
             return self._initd_data[name]
 
         data = None
-        if name == "Adult":
+        if name == self.ADULT_D:
             pass
-        elif name == "Compas":
+        elif name == self.COMPAS_D:
             pass
-        elif name == "Default":
+        elif name == self.DUMMY_D:
             data = DummyData()  # default
         else:
             raise RuntimeError("Incorrect dataset name ", name)
@@ -58,11 +64,11 @@ class Tester:
         return data
 
     def _get_model(self, name) -> Model:
-        if name == "FairMask":
+        if name == self.FAIRMASK:
             pass
-        elif name == "FairBalance":
+        elif name == self.FAIRBALANCE:
             pass
-        elif name == "Default":
+        elif name == self.BASE_ML:
             return BaseModel()  # default
         else:
             raise RuntimeError("Incorrect method name ", name)

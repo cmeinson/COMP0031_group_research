@@ -1,9 +1,14 @@
 from typing import List, Dict, Any
 import numpy as np
 import pandas as pd
-from sklearn.linear_model import ElasticNet
 
+from sklearn.neural_network import MLPClassifier
+from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.naive_bayes import GaussianNB
+
+
 
 
 class Model:
@@ -37,15 +42,31 @@ class Model:
 
 
 class BaseModel(Model):
+    SV = "SupportVectorClassifier"
+    KN = "KNearestNeighbours"
+    NN = "NeuralNetwork"
+    RF = "RandomForest"
+    NB = "NaiveBayes"
+
     def __init__(self, other: Dict[str, Any] = {}) -> None:
         self._model = None
 
-    def fit(self, X: pd.DataFrame, y: np.array, sensitive_atributes: List[str], method = "EN", method_bias = None, other: Dict[str, Any] = {}):
-        if (method == "EN"):
-            self._model = ElasticNet()
-        else:
-            #idk some default
+    def fit(self, X: pd.DataFrame, y: np.array, sensitive_atributes: List[str], method, method_bias = None, other: Dict[str, Any] = {}):
+        if method == self.SV:
             self._model = SVC()
+        elif method == self.KN:
+            # example of how to pass hyperparams through "other"
+            k = 3 if ("KNN_k" not in other) else other["KNN_k"] 
+            self._model = KNeighborsClassifier(k)
+        elif method == self.NN:
+            self._model = MLPClassifier()
+        elif method == self.RF:
+            self._model = RandomForestClassifier(n_estimators=10)
+        elif method == self.NB:
+            self._model = GaussianNB()
+        else:
+            raise RuntimeError("Invalid ml method name: ", method)
+            
         self._model.fit(X, y)
 
     def predict(self, X: pd.DataFrame, other: Dict[str, Any] = {}) -> np.array:
