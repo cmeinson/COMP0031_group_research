@@ -83,7 +83,7 @@ class Tester:
             "Bias Mitigation": [bias_mit],
             "ML method": [ml_method],
             "ML bias mit": [bias_ml_method],
-            "Sensitive attrs": sensitive_attr
+            "Sensitive attrs": [sensitive_attr]
         }
         entry.update({key: [evals[key]] for key in evals})
         res = pd.DataFrame(entry)
