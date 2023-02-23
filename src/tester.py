@@ -5,7 +5,7 @@ from .compas_data import CompasData
 from .ml_interface import Model, BaseModel
 from .metrics import Metrics
 from typing import List, Dict, Any
-
+from .fairbalance import FairBalanceModel
 
 class Tester:
     # Avalable datasets for testing:
@@ -69,7 +69,7 @@ class Tester:
         if name == self.FAIRMASK:
             pass
         elif name == self.FAIRBALANCE:
-            pass
+            return FairBalanceModel()
         elif name == self.BASE_ML:
             return BaseModel()  # default
         else:
