@@ -52,7 +52,7 @@ class FairBalanceModel(Model):
         :return: predictions for each row of X
         :rtype: np.array
         """
-        preds = self.clf.predict(self.X)
+        preds = self.clf.predict(X)
         return preds
 
     def FairBalance(self, X, y, A):
