@@ -1,6 +1,7 @@
 from os import path
 import pandas as pd
 from .data_interface import Data, DummyData
+from .compas_data import CompasData
 from .ml_interface import Model, BaseModel
 from .metrics import Metrics
 from typing import List, Dict, Any
@@ -54,7 +55,7 @@ class Tester:
         if name == self.ADULT_D:
             pass
         elif name == self.COMPAS_D:
-            pass
+            data = CompasData()
         elif name == self.DUMMY_D:
             data = DummyData()  # default
         else:
