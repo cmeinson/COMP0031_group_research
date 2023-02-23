@@ -22,11 +22,11 @@ class Tester:
         self._initd_data = {}
         self._file = output_filename + ".csv"
 
-    def run_test(self, metric_names: List[str], dataset: str, bias_mit: str, 
-                 ml_method: str, bias_ml_method: str = None,
-                 sensitive_attr: List[str] = None, other={}):
+    def run_test(self, metric_names: List[str], dataset: str,
+                 bias_mit: str, ml_method: str, bias_ml_method: str = None,
+                 data_preprocessing: str = None, sensitive_attr: List[str] = None, other={}):
 
-        data = self._get_dataset(dataset)
+        data = self._get_dataset(dataset,data_preprocessing)
         model = self._get_model(bias_mit)
 
         X, y = data.get_train_data()
@@ -47,21 +47,22 @@ class Tester:
             evals[name] = metrics.get(name)
         return evals 
 
-    def _get_dataset(self, name) -> Data:
-        if name in self._initd_data:
-            return self._initd_data[name]
+    def _get_dataset(self, name:str, preprocessing:str) -> Data:
+        dataset_description = name if not preprocessing else name+preprocessing
+        if dataset_description in self._initd_data:
+            return self._initd_data[dataset_description]
 
         data = None
         if name == self.ADULT_D:
             pass
         elif name == self.COMPAS_D:
-            data = CompasData()
+            data = CompasData(preprocessing)
         elif name == self.DUMMY_D:
-            data = DummyData()  # default
+            data = DummyData(preprocessing)  # default
         else:
             raise RuntimeError("Incorrect dataset name ", name)
 
-        self._initd_data[name] = data
+        self._initd_data[dataset_description] = data
         return data
 
     def _get_model(self, name) -> Model:

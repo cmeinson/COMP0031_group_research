@@ -6,7 +6,7 @@ from sklearn.model_selection import train_test_split
 class Data:
     # NB: if ur implementation of the class takes more than one file pls put it all into sub folder
 
-    def __init__(self, tests_ratio = 0.2) -> None:
+    def __init__(self, preprocessing:str = None, tests_ratio = 0.2) -> None:
         # does reading and cleaning go here or do we add extra functions for that?
         raise NotImplementedError
 
@@ -27,7 +27,7 @@ class Data:
     #    raise NotImplementedError
 
 class DummyData(Data):
-    def __init__(self, test_ratio=0.2) -> None:
+    def __init__(self, preprocessing = None, test_ratio=0.2) -> None:
         data = [[0.1, 0], [0.4, 0], [0.5, 0], [0.3, 1], [0.4, 1], [0.7, 1]]
         self._X = pd.DataFrame(data, columns=["attr", "sensitive"])
         self._y = np.array([0, 1, 1, 0, 1, 1])

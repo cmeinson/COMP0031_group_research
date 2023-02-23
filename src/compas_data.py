@@ -7,7 +7,7 @@ from sklearn.model_selection import train_test_split
 class CompasData(Data):
     # NB: if ur implementation of the class takes more than one file pls put it all into sub folder
 
-    def __init__(self, tests_ratio=0.2) -> None:
+    def __init__(self, preprocessing = None, tests_ratio=0.2) -> None:
         # does reading and cleaning go here or do we add extra functions for that?
         dataset = open('../data/compas-scores-raw.csv')
         lines = dataset.readlines()
