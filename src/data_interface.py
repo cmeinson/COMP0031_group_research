@@ -7,24 +7,41 @@ class Data:
     # NB: if ur implementation of the class takes more than one file pls put it all into sub folder
 
     def __init__(self, preprocessing:str = None, tests_ratio = 0.2) -> None:
-        # does reading and cleaning go here or do we add extra functions for that?
+        """
+        - reads the according dataset from the ata folder,
+        - runs cleaning and preprocessing methods, chosen based on the preprocessing param
+        - splits the data into test and train
+
+        :param preprocessing: determines the preprocessing method, defaults to None
+        :type preprocessing: str, optional
+        :param tests_ratio: determines the proportion of test data, defaults to 0.2
+        :type tests_ratio: float, optional
+        """
         raise NotImplementedError
 
     def get_train_data(self) -> Tuple[pd.DataFrame, np.array]:
-        # returns (X, y)
+        """Returns the training data where
+        X: is the df with all attriutes, with accordig column names
+        y: the outcome for each row (e.g. the default credit, is income above 50k, did reoffend?)
+
+        :return: training data (X, y)
+        :rtype: Tuple[pd.DataFrame, np.array]
+        """
         raise NotImplementedError
 
     def get_test_data(self) -> Tuple[pd.DataFrame, np.array]:
-        # returns (X, y)
+        """
+        :return: test data (X, y)
+        :rtype: Tuple[pd.DataFrame, np.array]
+        """
         raise NotImplementedError
 
     def get_sensitive_column_names(self) -> List[str]:
-        # returns a list of names
+        """
+        :return: column names (in the X above) of all sensitive attributes in the given dataset
+        :rtype: List[str]
+        """
         raise NotImplementedError
-
-    #def transform(self): # LATER
-    #    # will probably rename later. but something for merging attributes into binary ones?
-    #    raise NotImplementedError
 
 class DummyData(Data):
     def __init__(self, preprocessing = None, test_ratio=0.2) -> None:

@@ -32,7 +32,7 @@ class Tester:
         X, y = data.get_train_data()
         if not sensitive_attr:
             sensitive_attr = data.get_sensitive_column_names()
-        model.fit(X, y, sensitive_attr, ml_method, bias_ml_method, other)
+        model.train(X, y, sensitive_attr, ml_method, bias_ml_method, other)
 
         X, y = data.get_test_data()
         preds = model.predict(X, other)
