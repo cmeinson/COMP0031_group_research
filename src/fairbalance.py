@@ -16,9 +16,8 @@ class FairBalanceModel(Model):
         """
         super(FairBalanceModel, self).__init__(other)
         self.clf = LogisticRegression(max_iter=100000)
-        self.groups = {}
+        #self.groups = {}
 
-    #Need to change how this method is called because FairBalance needs access to the whole dataset
     def train(self, X: pd.DataFrame, y: np.array, sensitive_attributes: List[str], method, method_bias = None, other: Dict[str, Any] = {}):
         """ Trains an ML model
 
@@ -36,10 +35,9 @@ class FairBalanceModel(Model):
         :type other: Dict[str, Any], optional
         """
 
-        X_train, X_test, y_train, y_test = self.train_test_split(X, y, sensitive_attributes, test_size=0.5)
-        self.data_preprocessing(X_train)
-        sample_weight = self.FairBalance(X_train, y_train, sensitive_attributes)
-        self.clf.fit(X_train, y_train, sample_weight)
+        #self.data_preprocessing(X)
+        sample_weight = self.FairBalance(X, y, sensitive_attributes)
+        self.clf.fit(X, y, sample_weight)
 
     def predict(self, X: pd.DataFrame, other: Dict[str, Any] = {}) -> np.array:
         """ Uses the previously trained ML model
@@ -75,47 +73,21 @@ class FairBalanceModel(Model):
         sample_weight = sample_weight * len(y) / sum(sample_weight)
         return sample_weight
 
+    # def data_preprocessing(self, X):
+    #     numerical_columns_selector = selector(dtype_exclude=object)
+    #     numerical_columns = numerical_columns_selector(X)
+    #     numerical_preprocessor = StandardScaler()
 
-    #This should be moved to be part of the classes implementing Data interface
-    def data_preprocessing(self, X):
-        numerical_columns_selector = selector(dtype_exclude=object)
-        numerical_columns = numerical_columns_selector(X)
-        numerical_preprocessor = StandardScaler()
+    #     categorical_columns_selector = selector(dtype_include=object)
+    #     categorical_columns = categorical_columns_selector(X)
+    #     categorical_preprocessor = OneHotEncoder(handle_unknown = 'ignore')
 
-        categorical_columns_selector = selector(dtype_include=object)
-        categorical_columns = categorical_columns_selector(X)
-        categorical_preprocessor = OneHotEncoder(handle_unknown = 'ignore')
+    #     preprocessor = ColumnTransformer([
+    #         ('OneHotEncoder', categorical_preprocessor, categorical_columns),
+    #         ('StandardScaler', numerical_preprocessor, numerical_columns)])
 
-        preprocessor = ColumnTransformer([
-            ('OneHotEncoder', categorical_preprocessor, categorical_columns),
-            ('StandardScaler', numerical_preprocessor, numerical_columns)])
+    #     preprocessor.fit_transform(X)
 
-        preprocessor.fit_transform(X)
-
-    #Modify the classes methods of get_train_data(), get_test_data() to account for this?
-    def train_test_split(self, X, y, sensitive_attributes, test_size = 0.5):
-        #Split training and testing data proportionally across each group
-        groups = {}
-        for i in range(len(y)):
-            key = tuple([X[a][i] for a in sensitive_attributes] + [y[i]])
-            if key not in groups:
-                groups[key] = []
-            groups[key].append(i)
-
-        train = []
-        test = []
-        for key in groups:
-            testing = list(np.random.choice(groups[key], int(len(groups[key]) * test_size), replace=False))
-            training = list(set(groups[key]) - set(testing))
-            test.extend(testing)
-            train.extend(training)
-
-        X_train = X.iloc[train]
-        X_test = X.iloc[test]
-        y_train = y[train]
-        y_test = y[test]
-        X_train.index = range(len(X_train))
-        X_test.index = range(len(X_test))
-        return X_train, X_test, y_train, y_test
+    
 
 
