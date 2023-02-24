@@ -9,6 +9,16 @@ class CompasData(Data):
     # NB: if ur implementation of the class takes more than one file pls put it all into sub folder
     # does reading and cleaning go here or do we add extra functions for that?
     def __init__(self, preprocessing=None, tests_ratio=0.2) -> None:
+        """
+        - reads the according dataset from the ata folder,
+        - runs cleaning and preprocessing methods, chosen based on the preprocessing param
+        - splits the data into test and train
+
+        :param preprocessing: determines the preprocessing method, defaults to None
+        :type preprocessing: str, optional
+        :param tests_ratio: determines the proportion of test data, defaults to 0.2
+        :type tests_ratio: float, optional
+        """
         self.data = pd.read_csv('data/compas-scores-two-years.csv')
 
         if preprocessing is None:
@@ -22,25 +32,6 @@ class CompasData(Data):
         # Create train-test split
         self._X_train, self._X_test, self._y_train, self._y_test = train_test_split(self._X, self._y,
                                                                                     test_size=tests_ratio)
-
-        # raise NotImplementedError
-
-    # def set_dataset(self, lines):
-    #     print(list(self.data.keys()))
-    #     # set column headers as keys in dictionary
-    #     for col in self.headers:
-    #         self.data[col] = []
-    #
-    #     # set data for keys in dictionary
-    #     for row in range(1, len(lines)):
-    #         vals = lines[row].split(',')
-    #         # update key value pair
-    #         for i in range(0, len(self.headers)):
-    #             curr_key = list(self.data.keys())[i]
-    #             curr = self.data.get(curr_key)
-    #             curr.append(vals[i])
-    #             self.data[list(self.data)[i]] = curr
-    #     return self.data
 
     def get_train_data(self) -> Tuple[pd.DataFrame, np.array]:
         """Returns the training data where
