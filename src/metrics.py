@@ -20,22 +20,12 @@ class Metrics:
     DI = "di"
     FR = "fr"
 
-    def __init__(self, clf, X: pd.DataFrame, y: np.array, preds: np.array, data) -> None:
+    def __init__(self, X: pd.DataFrame, y: np.array, preds: np.array) -> None:
         # might need more attributes idk
         self._X = X # not even sure if needed
         self._y = y
         self._preds = preds
         self.groups = {}
-        self.clf = clf
-        self._data = data
-        self.y_pred = self.clf.predict(self._X)
-        for i in range(len(self._y)):
-            for d in data:
-                group = [tuple(self._X[d][i])]
-            if group not in self.groups:
-                self.groups[group] = []
-            self.groups[group].append(i)
-        #pass
 
     def get(self, metric_name):
         if metric_name == self.ACC:
