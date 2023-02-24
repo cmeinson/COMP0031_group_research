@@ -36,15 +36,21 @@ class Tester:
 
         X, y = data.get_test_data()
         preds = model.predict(X, other)
-        evals = self._evaluate(Metrics(X, y, preds), metric_names)
+        evals = self._evaluate(Metrics(X, y, preds), metric_names, sensitive_attr)
         self.save_test_results(evals, dataset, bias_mit, ml_method, bias_ml_method, sensitive_attr)
         return X, y, preds
 
 
-    def _evaluate(self, metrics: Metrics, metric_names: List[str]):
+    def _evaluate(self, metrics: Metrics, metric_names: List[str], sensitive_attr):
         evals = {}
         for name in metric_names:
-            evals[name] = metrics.get(name)
+            if name in Metrics.get_subgroup_dependant():
+                evals[name] = metrics.get(name, sensitive_attr)
+            elif name in Metrics.get_attribute_dependant():
+                for attr in sensitive_attr:
+                    evals[attr + '|' + name] = metrics.get(name, attr)
+            else:
+                evals[name] = metrics.get(name)
         return evals 
 
     def _get_dataset(self, name:str, preprocessing:str) -> Data:

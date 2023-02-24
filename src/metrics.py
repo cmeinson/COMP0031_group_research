@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from typing import List
 
 # how do we wanna do metrics?
 
@@ -19,6 +20,8 @@ class Metrics:
     SPD = "spd"
     DI = "di"
     FR = "fr"
+    SF = "[SF] Statistical Parity Subgroup Fairness"
+    DF = "[DF] Differential Fairness"
 
     def __init__(self, X: pd.DataFrame, y: np.array, preds: np.array) -> None:
         # might need more attributes idk
@@ -27,7 +30,19 @@ class Metrics:
         self._preds = preds
         self.groups = {}
 
-    def get(self, metric_name):
+    def get_subgroup_dependant():
+        # metrics that need a list of attributes as input to create subgroups
+        return [Metrics.SF, Metrics.DF]
+
+    def get_attribute_dependant():
+        # metrics that need a single attribute as input
+        return [Metrics.AOD, Metrics.EOD, Metrics.SPD]
+
+    def get_attribute_independant():
+        # mterics independant of attributes
+        return [Metrics.ACC, Metrics.PRE, Metrics.REC, Metrics.F1]
+
+    def get(self, metric_name, attr: str or List[str] = None):
         if metric_name == self.ACC:
             return self.accuracy()
         elif metric_name == self.PRE:
@@ -50,12 +65,12 @@ class Metrics:
             raise RuntimeError("Invalid metric name: ", metric_name)
     
     def accuracy(self) -> float:
-        return np.mean(self._y == self._preds)[True] / len(self._y)
+        return np.mean(self._y == self._preds)
 
     # etc other metrics
 
     def precision(self) -> float:
-        target1 = np.mean(self.y)[1] <= np.mean(self.y)[0]
+        target1 = np.mean(self._y)[1] <= np.mean(self._y)[0]
         conf = self.conf()
         if target1:
             prec = conf['tp'] / (conf['tp'] + conf['fp'])
