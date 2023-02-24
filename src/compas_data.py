@@ -15,6 +15,8 @@ class CompasData(Data):
             self.pre_processing()
 
         self._X = pd.DataFrame(self.data)
+        print(self._X)
+
         self._y = self.data['Probability'].to_numpy()
 
         # Create train-test split
@@ -56,10 +58,8 @@ class CompasData(Data):
         """
         return (self._X_test, self._y_test)
 
-    def pre_processing(self):
-        """
-        :return:
-        """
+    def pre_processing(self):#
+
         # preprocessing done according to preprocessing.ipynb
         self.data = self.data.drop(
             ['id', 'name', 'first', 'last', 'compas_screening_date', 'dob', 'age', 'juv_fel_count', 'decile_score',
