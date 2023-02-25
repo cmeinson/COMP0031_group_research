@@ -6,6 +6,7 @@ from .ml_interface import Model, BaseModel
 from .metrics import Metrics
 from typing import List, Dict, Any
 from .fairbalance import FairBalanceModel
+from .fairmask import FairMaskModel
 
 class Tester:
     # Avalable datasets for testing:
@@ -73,7 +74,7 @@ class Tester:
 
     def _get_model(self, name) -> Model:
         if name == self.FAIRMASK:
-            pass
+            return FairMaskModel()
         elif name == self.FAIRBALANCE:
             return FairBalanceModel()
         elif name == self.BASE_ML:
