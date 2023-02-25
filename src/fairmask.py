@@ -21,7 +21,71 @@ class FairMaskModel(Model):
         :type other: Dict[str, Any], optional
         """
         super(FairMaskModel, self).__init__(other)
+        self.clf1 = RandomForestClassifier()
+        self.clf2 = DecisionTreeRegressor()
 
+    def train(self, X: pd.DataFrame, y: np.array, sensitive_attributes: List[str], method, method_bias = None, other: Dict[str, Any] = {}):
+        """ Trains an ML model
+
+        :param X: training data
+        :type X: pd.DataFrame
+        :param y: training data outcomes
+        :type y: np.array
+        :param sensitive_attributes: names of sensitive attributes to be protected
+        :type sensitive_attributes: List[str]
+        :param method:  ml algo name to use for the main model training
+        :type method: _type_
+        :param method_bias: method name if needed for the bias mitigation, defaults to None
+        :type method_bias: _type_, optional
+        :param other: dictionary of any other params that we might wish to pass?, defaults to {}
+        :type other: Dict[str, Any], optional
+        """
+
+        for i in range(other['rep']):
+            X = copy.deepcopy(X.loc[:, X.columns != 'Probability'])
+            y = copy.deepcopy(y['Probability'])
+
+            reduced = list(X.columns)
+            reduced.remove(sensitive_attributes)
+            X_reduced, y_reduced = X.loc[:, reduced], X[sensitive_attributes]
+
+            # Build model to predict the protect attribute
+            self.clf2 = copy.deepcopy(other['base2'])
+            self.clf1 = copy.deepcopy(other['base1'])
+            self.clf1.fit(X_reduced, y_reduced)
+            
+            y_proba = self.clf.predict_proba(X_reduced)
+            y_proba = [each[1] for each in y_proba]
+            if isinstance(self.clf2, DecisionTreeClassifier) or isinstance(self.clf1, LogisticRegression):
+                self.clf2.fit(X_reduced, y_reduced)
+            else:
+                self.clf2.fit(X_reduced, y_proba)
+
+
+
+    def predict(self, X: pd.DataFrame, other: Dict[str, Any] = {}) -> np.array:
+        """ Uses the previously trained ML model
+
+        :param X: testing data
+        :type X: pd.DataFrame
+        :param other: dictionary of any other parms that we might wish to pass?, defaults to {}
+        :type other: Dict[str, Any], optional
+
+        :return: predictions for each row of X
+        :rtype: np.array
+        """
+        #need access to the protected attributes -> maybe passed through other again? 
+        X_test_reduced = X.loc[:, X.columns != other['sensitive_attributes']]
+        protected_pred = self.clf2.predict(X_test_reduced)
+        if isinstance(self.clf1, DecisionTreeRegressor) or isinstance(self.clf1, LinearRegression):
+            protected_pred = self.reg2clf(protected_pred, thresh=.5)
+        # Build model to predict the taget attribute Y
+        clf = copy.deepcopy(self.clf1)
+
+        X.loc[:, other['sensitive_attributes']] = protected_pred
+        preds = clf.predict(X)
+        return preds
+    
     def reg2clf(self,protected_pred,threshold=.5):
         out = []
         for each in protected_pred:
@@ -31,63 +95,4 @@ class FairMaskModel(Model):
         return out
 
 
-    def predict(self, df, base_clf, base2, keyword, ratio=.2, rep=10, thresh=.5):
-        """ Parameters description
-
-        - df: input dataset
-        - base_clf: classification model - trained with masked protected attributes
-        - base2: extrapolation model - trained on non-protected attributes and predict test data
-        - keyword: sensitive attributes
-        - ratio: test data ratio 
-        - rep: repetitions
-        - thresh: threshold that determines when an attribute is sensitive or not, we can actually standarize this or set it as 
-        a default for both algorithms
-        """ 
-
-        dataset_orig = df.dropna()
-        #Train data using MinMaxScaler witih boundaries 0-1
-
-        scaler = MinMaxScaler()
-        dataset_orig = pd.DataFrame(scaler.fit_transform(dataset_orig), columns=dataset_orig.columns)
-
-        for i in range(rep):
-            dataset_orig_train, dataset_orig_test = train_test_split(dataset_orig, test_size=ratio, random_state=i)
-            
-            #split data to train and test -> X data, Y probabilities
-
-            X_train = copy.deepcopy(dataset_orig_train.loc[:, dataset_orig_train.columns != 'Probability'])
-            y_train = copy.deepcopy(dataset_orig_train['Probability'])
-            X_test = copy.deepcopy(dataset_orig_test.loc[:, dataset_orig_test.columns != 'Probability'])
-            y_test = copy.deepcopy(dataset_orig_test['Probability'])
-
-            #remove sensitive column (e.g. "sex")
-            reduced = list(X_train.columns)
-
-            #reduced dataset without the sensitive columns
-            X_reduced, y_reduced = X_train.loc[:, reduced], X_train[keyword]
-
-            # Build model to predict the protect attribute
-            clf1 = copy.deepcopy(base2)
-
-            clf = copy.deepcopy(base_clf)
-            clf.fit(X_reduced, y_reduced)
-            y_proba = clf.predict_proba(X_reduced)
-            y_proba = [each[1] for each in y_proba]
-            if isinstance(clf1, DecisionTreeClassifier) or isinstance(clf1, LogisticRegression):
-                clf1.fit(X_reduced, y_reduced)
-            else:
-                clf1.fit(X_reduced, y_proba)
-            #             clf1.fit(X_reduced,y_reduced)
-
-            X_test_reduced = X_test.loc[:, X_test.columns != keyword]
-            protected_pred = clf1.predict(X_test_reduced)
-            if isinstance(clf1, DecisionTreeRegressor) or isinstance(clf1, LinearRegression):
-                protected_pred = self.reg2clf(protected_pred, threshold=thresh)
-            # Build model to predict the taget attribute Y
-            
-            clf2 = copy.deepcopy(base_clf)
-
-            X_test.loc[:, keyword] = protected_pred
-            y_pred = clf2.predict(X_test)
-
-        return y_pred
+    
