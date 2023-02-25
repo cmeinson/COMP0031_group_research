@@ -2,6 +2,7 @@ from os import path
 import pandas as pd
 from .data_interface import Data, DummyData
 from .compas_data import CompasData
+from .adult_data import AdultData
 from .ml_interface import Model, BaseModel
 from .metrics import Metrics
 from typing import List, Dict, Any
@@ -61,7 +62,7 @@ class Tester:
 
         data = None
         if name == self.ADULT_D:
-            pass
+            data = AdultData(preprocessing)
         elif name == self.COMPAS_D:
             data = CompasData(preprocessing)
         elif name == self.DUMMY_D:

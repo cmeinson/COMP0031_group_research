@@ -1,8 +1,11 @@
-from data_interface import Data
+from .data_interface import Data
 from typing import List, Tuple
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
+from sklearn.compose import ColumnTransformer
+from sklearn.compose import make_column_selector as selector
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
 
 class AdultData(Data):
     # NB: if ur implementation of the class takes more than one file pls put it all into sub folder
@@ -19,7 +22,7 @@ class AdultData(Data):
         :type tests_ratio: float, optional
         """
 
-        self.dataset_orig = pd.read_csv('data/adult.csv')
+        self.dataset_orig = pd.read_csv('data/adult2.csv')
 
         if preprocessing == None: # Do default pre-processing from Preprocessing.ipynb
             self.dataset_orig = self.dataset_orig.dropna()
@@ -39,6 +42,9 @@ class AdultData(Data):
             self.dataset_orig['age'] = np.where((self.dataset_orig['age'] >= 20 ) & (self.dataset_orig['age'] < 30), 20, self.dataset_orig['age'])
             self.dataset_orig['age'] = np.where((self.dataset_orig['age'] >= 10 ) & (self.dataset_orig['age'] < 10), 10, self.dataset_orig['age'])
             self.dataset_orig['age'] = np.where(self.dataset_orig['age'] < 10, 0, self.dataset_orig['age'])
+
+        elif preprocessing == "FairBalancePreprocessing":
+            self.FairBalancePreprocessing()
 
         # Split into input and output
         self._X = pd.DataFrame(self.dataset_orig, columns=["age", "education-num", "race", "sex", "capital-gain", "capital-loss", "hours-per-week"])
@@ -73,3 +79,33 @@ class AdultData(Data):
         
         #return ['sex', 'race', 'age', 'Probability'] (is age, income a sensitive attribute?)
         return ['race', 'sex']
+
+    #Probability we need some general methods if fairmask uses some common stuff
+    def FairBalancePreprocessing(self):
+        self.dataset_orig = self.dataset_orig.dropna()
+        self.dataset = self.dataset_orig[["age", "workclass", "education-num" , "marital-status", "occupation", "relationship", "race",
+                                          "sex", "capital-gain", "capital-loss", "hours-per-week", "native-country", "Probability"]]
+
+        self.dataset_orig['sex'] = np.where(self.dataset_orig['sex'] == 'Male', 1, 0)
+        self.dataset_orig['race'] = np.where(self.dataset_orig['race'] != 'White', 0, 1)
+        self.dataset_orig['Probability'] = np.where(self.dataset_orig['Probability'] == '<=50K', 0, 1)
+
+        numerical_columns_selector = selector(dtype_exclude=object)
+        numerical_columns = numerical_columns_selector(self.dataset)
+        numerical_preprocessor = StandardScaler()
+
+        categorical_columns_selector = selector(dtype_include=object)
+        categorical_columns = categorical_columns_selector(self.dataset)
+        categorical_preprocessor = OneHotEncoder(handle_unknown = 'ignore')
+
+        preprocessor = ColumnTransformer([
+                        ('OneHotEncoder', categorical_preprocessor, categorical_columns),
+                        ('StandardScaler', numerical_preprocessor, numerical_columns)])
+
+        preprocessor.fit_transform(self.dataset)
+
+        independent = self.dataset.keys().tolist()
+        dependent = independent.pop(-1)
+
+        self.X = self.dataset[independent]
+        self.y = np.array(self.dataset[dependent])
