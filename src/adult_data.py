@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
-class AdultData:
+class AdultData(Data):
     # NB: if ur implementation of the class takes more than one file pls put it all into sub folder
 
     def __init__(self, preprocessing:str = None, tests_ratio = 0.2) -> None:
