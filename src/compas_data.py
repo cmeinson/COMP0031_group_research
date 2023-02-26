@@ -78,7 +78,7 @@ class CompasData(Data):
         :rtype: List[str]
         """
         # returns a list of names
-        return ['sex', 'age', 'race']
+        return ['sex', 'age_cat', 'race']
         # raise NotImplementedError
 
     # def transform(self): # LATER
