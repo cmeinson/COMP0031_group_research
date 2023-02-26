@@ -22,6 +22,22 @@ class AdultData(Data):
         self.dataset_orig = pd.read_csv('data/adult.csv')
 
         # Do default pre-processing from Preprocessing.ipynb
+        self.pre_processing()
+
+        # Split into input and output
+        self._X = pd.DataFrame(self.dataset_orig, columns=["age", "education-num", "race", "sex", "capital-gain", "capital-loss", "hours-per-week"])
+        self._y = self.dataset_orig['Probability'].to_numpy()
+        
+        if preprocessing == "FairBalance":
+            self._preprocess_fairbalance(self._X)
+        elif preprocessing == "FairMask":
+            pass # Nothing special as of yet
+        
+        # Create train-test split
+        self._X_train, self._X_test, self._y_train, self._y_test = train_test_split(self._X, self._y,
+                                                                                    test_size=tests_ratio)
+
+    def pre_processing(self):
         self.dataset_orig = self.dataset_orig.dropna()
         self.dataset_orig = self.dataset_orig.drop(['workclass', 'fnlwgt', 'education', 'marital-status', 'occupation', 'relationship', 'native-country'], axis=1)
 
@@ -40,20 +56,6 @@ class AdultData(Data):
         self.dataset_orig['age'] = np.where((self.dataset_orig['age'] >= 10 ) & (self.dataset_orig['age'] < 10), 10, self.dataset_orig['age'])
         self.dataset_orig['age'] = np.where(self.dataset_orig['age'] < 10, 0, self.dataset_orig['age'])
 
-        # Split into input and output
-        self._X = pd.DataFrame(self.dataset_orig, columns=["age", "education-num", "race", "sex", "capital-gain", "capital-loss", "hours-per-week"])
-        self._y = self.dataset_orig['Probability'].to_numpy()
-        
-        if preprocessing == "FairBalance":
-            self._preprocess_fairbalance(self._X)
-        elif preprocessing == "FairMask":
-            pass # Nothing special as of yet
-        
-        # Create train-test split
-        self._X_train, self._X_test, self._y_train, self._y_test = train_test_split(self._X, self._y,
-                                                                                    test_size=tests_ratio)
-
-
     def get_sensitive_column_names(self) -> List[str]:
         """
         :return: column names (in the X above) of all sensitive attributes in the given dataset
@@ -62,5 +64,3 @@ class AdultData(Data):
         
         #return ['sex', 'race', 'age', 'Probability'] (is age, income a sensitive attribute?)
         return ['race', 'sex']
-
-
