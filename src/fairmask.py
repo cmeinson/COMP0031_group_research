@@ -20,7 +20,6 @@ class FairMaskModel(Model):
         :param other: any hyper params we need to pass, defaults to {}
         :type other: Dict[str, Any], optional
         """
-        super(FairMaskModel, self).__init__(other)
         self.clf1 = RandomForestClassifier()
         self.clf2 = DecisionTreeRegressor()
 
