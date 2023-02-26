@@ -22,7 +22,7 @@ class AdultData(Data):
         :type tests_ratio: float, optional
         """
 
-        self.dataset_orig = pd.read_csv('data/adult2.csv')
+        self.dataset_orig = pd.read_csv('data/adult.csv')
 
         if preprocessing == None: # Do default pre-processing from Preprocessing.ipynb
             self.dataset_orig = self.dataset_orig.dropna()
@@ -43,12 +43,14 @@ class AdultData(Data):
             self.dataset_orig['age'] = np.where((self.dataset_orig['age'] >= 10 ) & (self.dataset_orig['age'] < 10), 10, self.dataset_orig['age'])
             self.dataset_orig['age'] = np.where(self.dataset_orig['age'] < 10, 0, self.dataset_orig['age'])
 
+        
+
+            # Split into input and output
+            self._X = pd.DataFrame(self.dataset_orig, columns=["age", "education-num", "race", "sex", "capital-gain", "capital-loss", "hours-per-week"])
+            self._y = self.dataset_orig['Probability'].to_numpy()
+
         elif preprocessing == "FairBalancePreprocessing":
             self.FairBalancePreprocessing()
-
-        # Split into input and output
-        self._X = pd.DataFrame(self.dataset_orig, columns=["age", "education-num", "race", "sex", "capital-gain", "capital-loss", "hours-per-week"])
-        self._y = self.dataset_orig['Probability'].to_numpy()
         
         # Create train-test split
         self._X_train, self._X_test, self._y_train, self._y_test = train_test_split(self._X, self._y,
@@ -107,5 +109,5 @@ class AdultData(Data):
         independent = self.dataset.keys().tolist()
         dependent = independent.pop(-1)
 
-        self.X = self.dataset[independent]
-        self.y = np.array(self.dataset[dependent])
+        self._X = self.dataset[independent]
+        self._y = np.array(self.dataset[dependent])
