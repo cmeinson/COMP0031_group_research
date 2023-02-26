@@ -2,8 +2,10 @@ from .ml_interface import Model
 from typing import List, Dict, Any
 import numpy as np
 import pandas as pd
-from sklearn.compose import make_column_selector as selector
 from sklearn.linear_model import LogisticRegression
+from sklearn.compose import ColumnTransformer
+from sklearn.compose import make_column_selector as selector
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
 
 class FairBalanceModel(Model):
     LOGR = "LogisticRegression" 
@@ -37,9 +39,10 @@ class FairBalanceModel(Model):
             self._model = LogisticRegression(max_iter=100000)
         else:
             raise RuntimeError("Invalid ml method name: ", method)
-            
+        
         sample_weight = self.FairBalance(X, y, sensitive_attributes)
         self._model.fit(X, y, sample_weight)
+
 
     def predict(self, X: pd.DataFrame, other: Dict[str, Any] = {}) -> np.array:
         """ Uses the previously trained ML model
@@ -55,14 +58,14 @@ class FairBalanceModel(Model):
         return self._model.predict(X)
 
     def FairBalance(self, X, y, A):
-        # X: independent variables (2-d pd.DataFrame)
-        # y: the dependent variable (1-d np.array)
-        # A: the name of the sensitive attributes (list of string)
         groups_class = {}
         group_weight = {}
+        X.reset_index(drop=True, inplace=True)
+
         for i in range(len(y)):
             key_class = tuple([X[a][i] for a in A] + [y[i]])
             key = key_class[:-1]
+            
             if key not in group_weight:
                 group_weight[key] = 0
             group_weight[key] += 1
@@ -78,20 +81,12 @@ class FairBalanceModel(Model):
         sample_weight = sample_weight * len(y) / sum(sample_weight)
         return sample_weight
 
-    # def data_preprocessing(self, X):
-    #     numerical_columns_selector = selector(dtype_exclude=object)
-    #     numerical_columns = numerical_columns_selector(X)
-    #     numerical_preprocessor = StandardScaler()
 
-    #     categorical_columns_selector = selector(dtype_include=object)
-    #     categorical_columns = categorical_columns_selector(X)
-    #     categorical_preprocessor = OneHotEncoder(handle_unknown = 'ignore')
 
-    #     preprocessor = ColumnTransformer([
-    #         ('OneHotEncoder', categorical_preprocessor, categorical_columns),
-    #         ('StandardScaler', numerical_preprocessor, numerical_columns)])
+        
 
-    #     preprocessor.fit_transform(X)
+
+   
 
     
 

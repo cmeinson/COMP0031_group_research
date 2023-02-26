@@ -7,6 +7,7 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.naive_bayes import GaussianNB
+from sklearn.linear_model import LogisticRegression
 
 
 class Model:
@@ -58,6 +59,7 @@ class BaseModel(Model):
     NN = "NeuralNetwork"
     RF = "RandomForest"
     NB = "NaiveBayes"
+    LR = "LogisticRegression"
 
     def __init__(self, other: Dict[str, Any] = {}) -> None:
         self._model = None
@@ -75,6 +77,8 @@ class BaseModel(Model):
             self._model = RandomForestClassifier(n_estimators=10)
         elif method == self.NB:
             self._model = GaussianNB()
+        elif method == self.LR:
+            self._model = LogisticRegression()
         else:
             raise RuntimeError("Invalid ml method name: ", method)
             

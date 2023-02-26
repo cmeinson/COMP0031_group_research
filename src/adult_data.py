@@ -12,7 +12,6 @@ class AdultData(Data):
         - reads the according dataset from the data folder,
         - runs cleaning and preprocessing methods, chosen based on the preprocessing param
         - splits the data into test and train
-
         :param preprocessing: determines the preprocessing method, defaults to None
         :type preprocessing: str, optional
         :param tests_ratio: determines the proportion of test data, defaults to 0.2
