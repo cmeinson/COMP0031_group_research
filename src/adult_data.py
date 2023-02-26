@@ -1,4 +1,4 @@
-from data_interface import Data
+from .data_interface import Data
 from typing import List, Tuple
 import numpy as np
 import pandas as pd
@@ -49,6 +49,8 @@ class AdultData(Data):
         
         if preprocessing == "FairBalance":
             self.FairBalance(self._X)
+        elif preprocessing == "FairMask":
+            pass # Nothing special as of yet
         
         # Create train-test split
         self._X_train, self._X_test, self._y_train, self._y_test = train_test_split(self._X, self._y,
