@@ -8,7 +8,7 @@ results_filename = "test"
 metric_names = [Metrics.ACC]
 
 # All the following constants are just strings so caould also easily be read from a file or whatever. just for convenience:
-dataset = Tester.DUMMY_D
+dataset = Tester.COMPAS_D
 bias_mit = Tester.FAIRMASK
 ml_method = FairMaskModel.RF
 ml_method_bias = FairMaskModel.DT
