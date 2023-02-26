@@ -37,7 +37,7 @@ class FairBalanceModel(Model):
             self._model = LogisticRegression(max_iter=100000)
         else:
             raise RuntimeError("Invalid ml method name: ", method)
-            
+        
         sample_weight = self.FairBalance(X, y, sensitive_attributes)
         self._model.fit(X, y, sample_weight)
 
@@ -55,11 +55,9 @@ class FairBalanceModel(Model):
         return self._model.predict(X)
 
     def FairBalance(self, X, y, A):
-        # X: independent variables (2-d pd.DataFrame)
-        # y: the dependent variable (1-d np.array)
-        # A: the name of the sensitive attributes (list of string)
         groups_class = {}
         group_weight = {}
+
         for i in range(len(y)):
             key_class = tuple([X[a][i] for a in A] + [y[i]])
             key = key_class[:-1]
@@ -70,13 +68,10 @@ class FairBalanceModel(Model):
                 groups_class[key_class] = []
             groups_class[key_class].append(i)
         sample_weight = np.array([1.0]*len(y))
-        sample_weight = np.array([1.0]*len(y))
         for key in groups_class:
-            weight = group_weight[key[:-1]]/len(groups_class[key])
             weight = group_weight[key[:-1]]/len(groups_class[key])
             for i in groups_class[key]:
                 sample_weight[i] = weight
-        # Rescale the total weights to len(y)
         # Rescale the total weights to len(y)
         sample_weight = sample_weight * len(y) / sum(sample_weight)
         return sample_weight

@@ -43,8 +43,6 @@ class AdultData(Data):
             self.dataset_orig['age'] = np.where((self.dataset_orig['age'] >= 10 ) & (self.dataset_orig['age'] < 10), 10, self.dataset_orig['age'])
             self.dataset_orig['age'] = np.where(self.dataset_orig['age'] < 10, 0, self.dataset_orig['age'])
 
-        
-
             # Split into input and output
             self._X = pd.DataFrame(self.dataset_orig, columns=["age", "education-num", "race", "sex", "capital-gain", "capital-loss", "hours-per-week"])
             self._y = self.dataset_orig['Probability'].to_numpy()
@@ -93,25 +91,23 @@ class AdultData(Data):
         self.dataset['Probability'] = np.where(self.dataset['Probability'] == '<=50K', 0, 1)
 
         independent = self.dataset.keys().tolist()
-        print(independent)
         dependent = independent.pop(-1)
-        print(dependent)
 
         self._X = self.dataset[independent]
-        self._y = np.array(self.dataset["Probability"])
+        self._y = np.array(self.dataset[dependent])
 
-        numerical_columns_selector = selector(dtype_exclude=object)
-        numerical_columns = numerical_columns_selector(self.dataset)
-        numerical_preprocessor = StandardScaler()
+        # numerical_columns_selector = selector(dtype_exclude=object)
+        # numerical_columns = numerical_columns_selector(self._X)
+        # numerical_preprocessor = StandardScaler()
 
-        categorical_columns_selector = selector(dtype_include=object)
-        categorical_columns = categorical_columns_selector(self.dataset)
-        categorical_preprocessor = OneHotEncoder(handle_unknown = 'ignore')
+        # categorical_columns_selector = selector(dtype_include=object)
+        # categorical_columns = categorical_columns_selector(self._X)
+        # categorical_preprocessor = OneHotEncoder(handle_unknown = 'ignore')
 
-        preprocessor = ColumnTransformer([
-                        ('OneHotEncoder', categorical_preprocessor, categorical_columns),
-                        ('StandardScaler', numerical_preprocessor, numerical_columns)])
+        # preprocessor = ColumnTransformer([
+        #                 ('OneHotEncoder', categorical_preprocessor, categorical_columns),
+        #                 ('StandardScaler', numerical_preprocessor, numerical_columns)])
 
-        preprocessor.fit_transform(self._X)
+        # preprocessor.fit_transform(self._X)
 
         
