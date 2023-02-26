@@ -18,10 +18,10 @@ class Metrics:
     F1 = "f1score"
 
     #fairness metrics
-    AOD = "aod"
-    EOD = "eod"
-    SPD = "spd"
-    DI = "di"
+    AOD = "[AOD] Average Odds Difference"
+    EOD = "[EOD] Equal Opportunity Difference"
+    SPD = "[SPD] Statistical Parity Difference"
+    DI = "[DI] Disparate Impact "
     SF = "[SF] Statistical Parity Subgroup Fairness"
     DF = "[DF] Differential Fairness"
 
@@ -86,39 +86,19 @@ class Metrics:
         return f1_score(self._y, self._preds)
 
     def aod(self, attr) -> float:
-        arr = []
-        for i in range(len(self._y)):
-            arr.append(attr[0])
-        ar = pd.Series(data=self._y, index=arr)
-        return np.mean(average_odds_difference(ar, self._preds))
+        return np.mean(average_odds_difference(pd.Series(self._y), self._preds))
 
     def eod(self, attr) -> float:
-        arr = []
-        for i in range(len(self._y)):
-            arr.append(attr[0])
-        ar = pd.Series(data=self._y, index=arr)
-        return np.mean(equal_opportunity_difference(ar, self._preds))
+        return np.mean(equal_opportunity_difference(pd.Series(self._y), self._preds))
 
     def spd(self, attr) -> float:
-        arr = []
-        for i in range(len(self._y)):
-            arr.append(attr[0])
-        ar = pd.Series(data=self._y, index=arr)
-        return np.mean(statistical_parity_difference(ar, self._preds))
+        return np.mean(statistical_parity_difference(pd.Series(self._y)))
 
     def di(self) -> float:
-        arr = []
-        for i in range(len(self._y)):
-            arr.append("col")
-        ar = pd.Series(data=self._y, index=arr)
-        return np.mean(disparate_impact_ratio(ar, self._preds))
+        return np.mean(disparate_impact_ratio(pd.Series(self._y)))
     
     def df(self, attr) -> float:
-        arr = []
-        for i in range(len(self._y)):
-            arr.append(attr[0])
-        ar = pd.Series(data=self._y, index=arr)
-        return np.mean(disparate_impact_ratio(ar, self._preds))
+        return np.mean(disparate_impact_ratio(pd.Series(self._y), self._preds))
     
     #def sf(self, attr) -> float:
     
