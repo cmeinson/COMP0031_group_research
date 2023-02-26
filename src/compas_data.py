@@ -33,6 +33,8 @@ class CompasData(Data):
             self.FairBalance(self._X)
         elif preprocessing == "FairMask":
             pass # Nothing special as of yet
+        
+        print(self._X)
 
         # Create train-test split
         self._X_train, self._X_test, self._y_train, self._y_test = train_test_split(self._X, self._y,
@@ -54,9 +56,10 @@ class CompasData(Data):
 
         self.data['race'] = np.where(self.data['race'] != 'Caucasian', 0, 1)
         self.data['sex'] = np.where(self.data['sex'] == 'Female', 0, 1)
-        self.data[''] = np.where(self.data['age_cat'] == 'Greater than 45', 45, self.data['age_cat'])
+        self.data['age_cat'] = np.where(self.data['age_cat'] == 'Greater than 45', 45, self.data['age_cat'])
         self.data['age_cat'] = np.where(self.data['age_cat'] == '25 - 45', 25, self.data['age_cat'])
         self.data['age_cat'] = np.where(self.data['age_cat'] == 'Less than 25', 0, self.data['age_cat'])
+        self.data['c_charge_degree'] = np.where(self.data['c_charge_degree'] == 'F', 1, 0)
 
         self.data.rename(index=str, columns={"two_year_recid": "Probability"}, inplace=True)
         self.data['Probability'] = np.where(self.data['Probability'] == 0, 1, 0)
@@ -86,3 +89,4 @@ class CompasData(Data):
         self.processor = ColumnTransformer([
             ('OneHotEncoder', categorical_processor, categorical_columns),
             ('StandardScaler', numerical_processor, numerical_columns)])
+compas = CompasData()
