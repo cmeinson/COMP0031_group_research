@@ -1,11 +1,9 @@
 from .data_interface import Data
-from typing import List, Tuple
+from typing import List
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import OneHotEncoder, StandardScaler
-from sklearn.compose import make_column_selector as selector
-from sklearn.compose import ColumnTransformer
+
 
 class CompasData(Data):
     # NB: if ur implementation of the class takes more than one file pls put it all into sub folder
@@ -30,7 +28,7 @@ class CompasData(Data):
         self._y = self.data['Probability'].to_numpy()
 
         if preprocessing == "FairBalance":
-            self.FairBalance(self._X)
+            self._preprocess_fairbalance(self._X)
         elif preprocessing == "FairMask":
             pass # Nothing special as of yet
 
@@ -73,16 +71,3 @@ class CompasData(Data):
     # def transform(self): # LATER
     #    # will probably rename later. but something for merging attributes into binary ones?
     #    raise NotImplementedError
-
-    def FairBalance(self, X):
-        numerical_columns_selector = selector(dtype_exclude=object)
-        categorical_columns_selector = selector(dtype_include=object)
-
-        numerical_columns = numerical_columns_selector(X)
-        categorical_columns = categorical_columns_selector(X)
-
-        categorical_processor = OneHotEncoder(handle_unknown = 'ignore')
-        numerical_processor = StandardScaler()
-        self.processor = ColumnTransformer([
-            ('OneHotEncoder', categorical_processor, categorical_columns),
-            ('StandardScaler', numerical_processor, numerical_columns)])
