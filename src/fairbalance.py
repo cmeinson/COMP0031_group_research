@@ -2,22 +2,19 @@ from .ml_interface import Model
 from typing import List, Dict, Any
 import numpy as np
 import pandas as pd
-from sklearn.preprocessing import StandardScaler, OneHotEncoder
-from sklearn.compose import ColumnTransformer
 from sklearn.compose import make_column_selector as selector
 from sklearn.linear_model import LogisticRegression
 
 class FairBalanceModel(Model):
+    LOGR = "LogisticRegression" 
+
     def __init__(self, other: Dict[str, Any] = {}) -> None:
         """Idk does not really do much yet I think:)
 
         :param other: any hyper params we need to pass, defaults to {}
         :type other: Dict[str, Any], optional
         """
-        
-        #super(FairBalanceModel, self).__init__(other)
-        self.clf = None
-        #self.groups = {}
+        self._model = None
 
     def train(self, X: pd.DataFrame, y: np.array, sensitive_attributes: List[str], method, method_bias = None, other: Dict[str, Any] = {}):
         """ Trains an ML model
@@ -36,11 +33,13 @@ class FairBalanceModel(Model):
         :type other: Dict[str, Any], optional
         """
 
-        #Max_iter should be passed through other
-        if method == "LogisticRegression":
-            self.clf = LogisticRegression(max_iter = 100000)
+        if method == self.LOGR:
+            self._model = LogisticRegression(max_iter=100000)
+        else:
+            raise RuntimeError("Invalid ml method name: ", method)
+            
         sample_weight = self.FairBalance(X, y, sensitive_attributes)
-        self.clf.fit(X, y, sample_weight)
+        self._model.fit(X, y, sample_weight)
 
     def predict(self, X: pd.DataFrame, other: Dict[str, Any] = {}) -> np.array:
         """ Uses the previously trained ML model
@@ -53,10 +52,12 @@ class FairBalanceModel(Model):
         :return: predictions for each row of X
         :rtype: np.array
         """
-        preds = self.clf.predict(X)
-        return preds
+        return self._model.predict(X)
 
     def FairBalance(self, X, y, A):
+        # X: independent variables (2-d pd.DataFrame)
+        # y: the dependent variable (1-d np.array)
+        # A: the name of the sensitive attributes (list of string)
         groups_class = {}
         group_weight = {}
         for i in range(len(y)):
@@ -69,10 +70,13 @@ class FairBalanceModel(Model):
                 groups_class[key_class] = []
             groups_class[key_class].append(i)
         sample_weight = np.array([1.0]*len(y))
+        sample_weight = np.array([1.0]*len(y))
         for key in groups_class:
+            weight = group_weight[key[:-1]]/len(groups_class[key])
             weight = group_weight[key[:-1]]/len(groups_class[key])
             for i in groups_class[key]:
                 sample_weight[i] = weight
+        # Rescale the total weights to len(y)
         # Rescale the total weights to len(y)
         sample_weight = sample_weight * len(y) / sum(sample_weight)
         return sample_weight
