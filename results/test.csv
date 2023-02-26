@@ -1,0 +1,2 @@
+timestamp,Dataset,Bias Mitigation,ML method,ML bias mit,Sensitive attrs,accuracy
+2023-02-26 17:01:16.789977,Dummy Dataset,FairMask Bias Mitigation,RandomForestClassifier,DecisionTreeRegressor,['sensitive'],0.5

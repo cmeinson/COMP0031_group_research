@@ -31,22 +31,6 @@ class CompasData(Data):
         self._X_train, self._X_test, self._y_train, self._y_test = train_test_split(self._X, self._y,
                                                                                     test_size=tests_ratio)
 
-    def get_train_data(self) -> Tuple[pd.DataFrame, np.array]:
-        """Returns the training data where
-        X: is the df with all attributes, with according column names
-        y: the outcome for each row (e.g. the default credit, is income above 50k, did reoffend?)
-        :return: training data (X, y)
-        :rtype: Tuple[pd.DataFrame, np.array]
-        """
-        return (self._X_train, self._y_train)
-
-    def get_test_data(self) -> Tuple[pd.DataFrame, np.array]:
-        """
-        :return: test data (X, y)
-        :rtype: Tuple[pd.DataFrame, np.array]
-        """
-        return (self._X_test, self._y_test)
-
     def pre_processing(self):
         # preprocessing done according to preprocessing.ipynb
         self.data = self.data.drop(

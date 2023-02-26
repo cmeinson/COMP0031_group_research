@@ -23,18 +23,19 @@ class Data:
         """Returns the training data where
         X: is the df with all attriutes, with accordig column names
         y: the outcome for each row (e.g. the default credit, is income above 50k, did reoffend?)
+        Duplicares everything for safety reasons:)
 
         :return: training data (X, y)
         :rtype: Tuple[pd.DataFrame, np.array]
         """
-        raise NotImplementedError
+        return (self._X_train.copy(), self._y_train.copy())
 
     def get_test_data(self) -> Tuple[pd.DataFrame, np.array]:
         """
         :return: test data (X, y)
         :rtype: Tuple[pd.DataFrame, np.array]
         """
-        raise NotImplementedError
+        return (self._X_test.copy(), self._y_test.copy())
 
     def get_sensitive_column_names(self) -> List[str]:
         """
@@ -50,12 +51,6 @@ class DummyData(Data):
         self._y = np.array([0, 1, 1, 0, 1, 1])
         self._X_train, self._X_test, self._y_train, self._y_test = train_test_split(self._X, self._y,
                                                                                     test_size=test_ratio)
-
-    def get_train_data(self) -> Tuple[pd.DataFrame, np.array]:
-        return (self._X_train, self._y_train)
-
-    def get_test_data(self) -> Tuple[pd.DataFrame, np.array]:
-        return (self._X_test, self._y_test)
 
     def get_sensitive_column_names(self) -> List[str]:
         return ["sensitive"]
