@@ -88,9 +88,17 @@ class AdultData(Data):
         self.dataset = self.dataset_orig[["age", "workclass", "education-num" , "marital-status", "occupation", "relationship", "race",
                                           "sex", "capital-gain", "capital-loss", "hours-per-week", "native-country", "Probability"]]
 
-        self.dataset_orig['sex'] = np.where(self.dataset_orig['sex'] == 'Male', 1, 0)
-        self.dataset_orig['race'] = np.where(self.dataset_orig['race'] != 'White', 0, 1)
-        self.dataset_orig['Probability'] = np.where(self.dataset_orig['Probability'] == '<=50K', 0, 1)
+        self.dataset['sex'] = np.where(self.dataset['sex'] == 'Male', 1, 0)
+        self.dataset['race'] = np.where(self.dataset['race'] != 'White', 0, 1)
+        self.dataset['Probability'] = np.where(self.dataset['Probability'] == '<=50K', 0, 1)
+
+        independent = self.dataset.keys().tolist()
+        print(independent)
+        dependent = independent.pop(-1)
+        print(dependent)
+
+        self._X = self.dataset[independent]
+        self._y = np.array(self.dataset["Probability"])
 
         numerical_columns_selector = selector(dtype_exclude=object)
         numerical_columns = numerical_columns_selector(self.dataset)
@@ -104,10 +112,6 @@ class AdultData(Data):
                         ('OneHotEncoder', categorical_preprocessor, categorical_columns),
                         ('StandardScaler', numerical_preprocessor, numerical_columns)])
 
-        preprocessor.fit_transform(self.dataset)
+        preprocessor.fit_transform(self._X)
 
-        independent = self.dataset.keys().tolist()
-        dependent = independent.pop(-1)
-
-        self._X = self.dataset[independent]
-        self._y = np.array(self.dataset[dependent])
+        

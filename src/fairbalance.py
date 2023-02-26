@@ -39,7 +39,7 @@ class FairBalanceModel(Model):
         #Max_iter should be passed through other
         if method == "LogisticRegression":
             self.clf = LogisticRegression(max_iter = 100000)
-        sample_weight = self.FairBalance(X, y,  sensitive_attributes)
+        sample_weight = self.FairBalance(X, y, sensitive_attributes)
         self.clf.fit(X, y, sample_weight)
 
     def predict(self, X: pd.DataFrame, other: Dict[str, Any] = {}) -> np.array:
