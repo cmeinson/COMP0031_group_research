@@ -1,3 +1,2 @@
 timestamp,Dataset,Bias Mitigation,ML method,ML bias mit,Sensitive attrs,accuracy
-2023-02-25 14:21:02.555634,Dummy Dataset,No Bias Mitigation,SupportVectorClassifier,,['sensitive'],0.5
-2023-02-24 02:17:54.999678,Dummy Dataset,No Bias Mitigation,KNearestNeighbours,,['sensitive'],[0.5]
+2023-02-26 17:01:16.789977,Dummy Dataset,FairMask Bias Mitigation,RandomForestClassifier,DecisionTreeRegressor,['sensitive'],0.5
