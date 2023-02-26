@@ -12,7 +12,6 @@ class AdultData(Data):
         - reads the according dataset from the data folder,
         - runs cleaning and preprocessing methods, chosen based on the preprocessing param
         - splits the data into test and train
-
         :param preprocessing: determines the preprocessing method, defaults to None
         :type preprocessing: str, optional
         :param tests_ratio: determines the proportion of test data, defaults to 0.2
@@ -24,12 +23,9 @@ class AdultData(Data):
         # Do default pre-processing from Preprocessing.ipynb
         self.pre_processing()
 
-            # Split into input and output
-            self._X = pd.DataFrame(self.dataset_orig, columns=["age", "education-num", "race", "sex", "capital-gain", "capital-loss", "hours-per-week"])
-            self._y = self.dataset_orig['Probability'].to_numpy()
-
-        elif preprocessing == "FairBalancePreprocessing":
-            self.FairBalancePreprocessing()
+        # Split into input and output
+        self._X = pd.DataFrame(self.dataset_orig, columns=["age", "education-num", "race", "sex", "capital-gain", "capital-loss", "hours-per-week"])
+        self._y = self.dataset_orig['Probability'].to_numpy()
         
         if preprocessing == "FairBalance":
             self._preprocess_fairbalance(self._X)
@@ -67,21 +63,3 @@ class AdultData(Data):
         
         #return ['sex', 'race', 'age', 'Probability'] (is age, income a sensitive attribute?)
         return ['race', 'sex']
-
-    #Probability we need some general methods if fairmask uses some common stuff
-    def FairBalancePreprocessing(self):
-        self.dataset_orig = self.dataset_orig.dropna()
-        self.dataset = self.dataset_orig[["age", "workclass", "education-num" , "marital-status", "occupation", "relationship", "race",
-                                          "sex", "capital-gain", "capital-loss", "hours-per-week", "native-country", "Probability"]]
-
-        self.dataset['sex'] = np.where(self.dataset['sex'] == 'Male', 1, 0)
-        self.dataset['race'] = np.where(self.dataset['race'] != 'White', 0, 1)
-        self.dataset['Probability'] = np.where(self.dataset['Probability'] == '<=50K', 0, 1)
-
-        independent = self.dataset.keys().tolist()
-        dependent = independent.pop(-1)
-
-        self._X = self.dataset[independent]
-        self._y = np.array(self.dataset[dependent])
-
-        
