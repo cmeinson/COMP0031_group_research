@@ -14,5 +14,3 @@ ml_method = BaseModel.LR
 tester = Tester(os.path.join("results",results_filename))
 X, y, preds = tester.run_test(metric_names, dataset, bias_mit, ml_method, 
                               data_preprocessing="FairBalancePreprocessing")
-print(X.head(10))
-print(y.head(10), preds.head(10))

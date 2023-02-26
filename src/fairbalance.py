@@ -2,8 +2,10 @@ from .ml_interface import Model
 from typing import List, Dict, Any
 import numpy as np
 import pandas as pd
-from sklearn.compose import make_column_selector as selector
 from sklearn.linear_model import LogisticRegression
+from sklearn.compose import ColumnTransformer
+from sklearn.compose import make_column_selector as selector
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
 
 class FairBalanceModel(Model):
     LOGR = "LogisticRegression" 
@@ -38,8 +40,10 @@ class FairBalanceModel(Model):
         else:
             raise RuntimeError("Invalid ml method name: ", method)
         
+        self.processing(X)
         sample_weight = self.FairBalance(X, y, sensitive_attributes)
-        self._model.fit(X, y, sample_weight)
+        X_processed = self.processor.fit_transform(X)
+        self._model.fit(X_processed, y, sample_weight)
 
     def predict(self, X: pd.DataFrame, other: Dict[str, Any] = {}) -> np.array:
         """ Uses the previously trained ML model
@@ -52,15 +56,17 @@ class FairBalanceModel(Model):
         :return: predictions for each row of X
         :rtype: np.array
         """
-        return self._model.predict(X)
+        return self._model.predict(self.processor.transform(X))
 
     def FairBalance(self, X, y, A):
         groups_class = {}
         group_weight = {}
+        X.reset_index(drop=True, inplace=True)
 
         for i in range(len(y)):
             key_class = tuple([X[a][i] for a in A] + [y[i]])
             key = key_class[:-1]
+            
             if key not in group_weight:
                 group_weight[key] = 0
             group_weight[key] += 1
@@ -75,6 +81,22 @@ class FairBalanceModel(Model):
         # Rescale the total weights to len(y)
         sample_weight = sample_weight * len(y) / sum(sample_weight)
         return sample_weight
+
+    def processing(self, X):
+        numerical_columns_selector = selector(dtype_exclude=object)
+        categorical_columns_selector = selector(dtype_include=object)
+
+        numerical_columns = numerical_columns_selector(X)
+        categorical_columns = categorical_columns_selector(X)
+
+        categorical_processor = OneHotEncoder(handle_unknown = 'ignore')
+        numerical_processor = StandardScaler()
+        self.processor = ColumnTransformer([
+            ('OneHotEncoder', categorical_processor, categorical_columns),
+            ('StandardScaler', numerical_processor, numerical_columns)])
+
+        
+
 
    
 

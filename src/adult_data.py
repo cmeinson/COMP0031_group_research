@@ -3,9 +3,6 @@ from typing import List, Tuple
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
-from sklearn.compose import ColumnTransformer
-from sklearn.compose import make_column_selector as selector
-from sklearn.preprocessing import StandardScaler, OneHotEncoder
 
 class AdultData(Data):
     # NB: if ur implementation of the class takes more than one file pls put it all into sub folder
@@ -95,19 +92,5 @@ class AdultData(Data):
 
         self._X = self.dataset[independent]
         self._y = np.array(self.dataset[dependent])
-
-        # numerical_columns_selector = selector(dtype_exclude=object)
-        # numerical_columns = numerical_columns_selector(self._X)
-        # numerical_preprocessor = StandardScaler()
-
-        # categorical_columns_selector = selector(dtype_include=object)
-        # categorical_columns = categorical_columns_selector(self._X)
-        # categorical_preprocessor = OneHotEncoder(handle_unknown = 'ignore')
-
-        # preprocessor = ColumnTransformer([
-        #                 ('OneHotEncoder', categorical_preprocessor, categorical_columns),
-        #                 ('StandardScaler', numerical_preprocessor, numerical_columns)])
-
-        # preprocessor.fit_transform(self._X)
 
         
