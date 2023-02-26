@@ -93,6 +93,8 @@ class FairMaskModel(Model):
             raise RuntimeError("Invalid ml method name: ", method)
         
     def _mask(self, X: pd.DataFrame):
+        threshold = 0.5
+
         X_out = X.copy()
         X_non_sens = X.copy()
         X_non_sens.drop(self._sensitive, axis=1)
@@ -101,17 +103,9 @@ class FairMaskModel(Model):
             mask_model = self._mask_models[attr]
             mask = mask_model.predict(X_non_sens)
             if self._method_bias == self.DT or self._method_bias == self.LOG:
-                mask = self.reg2clf(mask, threshold=0.5) # TODO: I am 100% sure there is a better way than this! to do that
+                mask = np.where(mask >= threshold, 1, 0) # substitute to the reg2clf function
             X_out.loc[:, attr] = mask
         return X_out
-    
-    def reg2clf(self,protected_pred,threshold=.5):
-        out = []
-        for each in protected_pred:
-            if each >=threshold:
-                out.append(1)
-            else: out.append(0)
-        return out
 
 
     
