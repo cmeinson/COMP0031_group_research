@@ -36,7 +36,7 @@ class Metrics:
 
     def get_subgroup_dependant():
         # metrics that need a list of attributes as input to create subgroups
-        return [Metrics.SF, Metrics.DF]
+        return [Metrics.DF]
 
     def get_attribute_dependant():
         # metrics that need a single attribute as input
@@ -44,7 +44,7 @@ class Metrics:
 
     def get_attribute_independant():
         # metrics independant of attributes
-        return [Metrics.ACC, Metrics.PRE, Metrics.REC, Metrics.F1]
+        return [Metrics.ACC, Metrics.PRE, Metrics.REC, Metrics.F1, Metrics.DI]
 
     def get(self, metric_name, attr: str or List[str] = None):
         if metric_name == self.ACC:
@@ -56,17 +56,17 @@ class Metrics:
         elif metric_name == self.F1:
             return self.f1score()
         elif metric_name == self.AOD:
-            return self.aod(attr), attr
+            return self.aod(attr)
         elif metric_name == self.EOD:
-            return self.eod(attr), attr
+            return self.eod(attr)
         elif metric_name == self.SPD:
-            return self.spd(attr), attr
+            return self.spd(attr)
         elif metric_name == self.DI:
             return self.di()
          #elif metric_name == self.SF:
-            #return self.sf(attr), attr
+            #return self.sf(attr)
         elif metric_name == self.DF:
-            return self.df(attr), attr
+            return self.df(attr)
         else:
             raise RuntimeError("Invalid metric name: ", metric_name)
     
