@@ -31,8 +31,6 @@ class CompasData(Data):
             self._preprocess_fairbalance(self._X)
         elif preprocessing == "FairMask":
             pass # Nothing special as of yet
-        
-        print(self._X)
 
         # Create train-test split
         self._X_train, self._X_test, self._y_train, self._y_test = train_test_split(self._X, self._y,
@@ -54,6 +52,8 @@ class CompasData(Data):
 
         self.data['race'] = np.where(self.data['race'] != 'Caucasian', 0, 1)
         self.data['sex'] = np.where(self.data['sex'] == 'Female', 0, 1)
+        self.data['priors_count'] = np.where((self.data['priors_count'] >= 1 ) & (self.data['priors_count'] <= 3), 3, self.data['priors_count'])
+        self.data['priors_count'] = np.where(self.data['priors_count'] > 3, 4, self.data['priors_count'])
         self.data['age_cat'] = np.where(self.data['age_cat'] == 'Greater than 45', 45, self.data['age_cat'])
         self.data['age_cat'] = np.where(self.data['age_cat'] == '25 - 45', 25, self.data['age_cat'])
         self.data['age_cat'] = np.where(self.data['age_cat'] == 'Less than 25', 0, self.data['age_cat'])
