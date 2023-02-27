@@ -1,5 +1,6 @@
 from os import path
 import pandas as pd
+import numpy as np
 from .data_interface import Data, DummyData
 from .adult_data import AdultData
 from .compas_data import CompasData
@@ -26,36 +27,51 @@ class Tester:
         self._file = output_filename + ".csv"
 
     def run_test(self, metric_names: List[str], dataset: str,
-                 bias_mit: str, ml_method: str, bias_ml_method: str = None,
+                 bias_mit: str, ml_method: str, bias_ml_method: str = None, repetitions = 1,
                  data_preprocessing: str = None, sensitive_attr: List[str] = None, other={}):
 
         data = self._get_dataset(dataset,data_preprocessing)
         model = self._get_model(bias_mit)
 
-        X, y = data.get_train_data()
-        if not sensitive_attr:
-            sensitive_attr = data.get_sensitive_column_names()
-        model.train(X, y, sensitive_attr, ml_method, bias_ml_method, other)
+        all_preds = []
+        all_evals = None
+        for rep in range(repetitions):
+            X, y = data.get_train_data()
+            if not sensitive_attr:
+                sensitive_attr = data.get_sensitive_column_names()
+            model.train(X, y, sensitive_attr, ml_method, bias_ml_method, other)
 
-        X, y = data.get_test_data()
-        preds = model.predict(X, other)
-        evals = self._evaluate(Metrics(X, y, preds), metric_names, sensitive_attr)
-        self.save_test_results(evals, dataset, bias_mit, ml_method, bias_ml_method, sensitive_attr)
-        return X, y, preds
+            X, y = data.get_test_data()
+            preds = model.predict(X, other)
+            evals = self._evaluate(Metrics(X, y, preds), metric_names, sensitive_attr)
+            all_evals = self._acc_evals(all_evals, evals)
+            self.save_test_results(evals, dataset, bias_mit, ml_method, bias_ml_method, sensitive_attr)
+            all_preds.append(preds)
+
+        self.save_test_results(all_evals, dataset, bias_mit, ml_method, bias_ml_method, sensitive_attr)
+        return X, y, all_preds
        
+
+    def _acc_evals(self, acc, evals):
+        if acc is None:
+            acc = {key:[val] for (key,val) in evals.items()}
+        else:
+            for (key, val) in evals.items():
+                acc[key].append(val)
+        return acc   
 
 
     def _evaluate(self, metrics: Metrics, metric_names: List[str], sensitive_attr):
         evals = {}
         for name in metric_names:
             if name in Metrics.get_subgroup_dependant():
-                evals[name] = metrics.get(name, sensitive_attr)
+                evals[name] = (metrics.get(name, sensitive_attr))
             elif name in Metrics.get_attribute_dependant():
                 for attr in sensitive_attr:
-                    evals[attr + '|' + name] = metrics.get(name, attr)
+                    evals[attr + '|' + name] = (metrics.get(name, attr))
             else:
-                evals[name] = metrics.get(name)
-        return evals 
+                evals[name] = (metrics.get(name))
+        return evals
 
     def _get_dataset(self, name:str, preprocessing:str) -> Data:
         dataset_description = name if not preprocessing else name+preprocessing
@@ -88,16 +104,19 @@ class Tester:
     def save_test_results(self, evals: Dict[str, Any], dataset: str,
                           bias_mit: str, ml_method: str, bias_ml_method: str,
                           sensitive_attr: List[str], other={}):
+        nr_samples = np.size(list(evals.values())[0])
 
         entry = {
             "timestamp": [pd.Timestamp.now()],
+            "nr samples": [nr_samples],
             "Dataset": [dataset],
             "Bias Mitigation": [bias_mit],
             "ML method": [ml_method],
             "ML bias mit": [bias_ml_method],
             "Sensitive attrs": [sensitive_attr]
         }
-        entry.update({key: [evals[key]] for key in evals})
+
+        entry.update({key: [np.average(evals[key])] for key in evals})
         res = pd.DataFrame(entry)
         
 
