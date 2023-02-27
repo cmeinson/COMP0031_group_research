@@ -24,7 +24,7 @@ class CompasData(Data):
         # Do default preprocessing
         self.pre_processing()
 
-        self._X = pd.DataFrame(self.data)
+        self._X = pd.DataFrame(self.data, columns=["sex", "age_cat", "race", "priors_count", "c_charge_degree", "decile_score.1", "priors_count.1"])
         self._y = self.data['Probability'].to_numpy()
 
         if preprocessing == "FairBalance":
@@ -52,8 +52,6 @@ class CompasData(Data):
 
         self.data['race'] = np.where(self.data['race'] != 'Caucasian', 0, 1)
         self.data['sex'] = np.where(self.data['sex'] == 'Female', 0, 1)
-        self.data['priors_count'] = np.where((self.data['priors_count'] >= 1 ) & (self.data['priors_count'] <= 3), 3, self.data['priors_count'])
-        self.data['priors_count'] = np.where(self.data['priors_count'] > 3, 4, self.data['priors_count'])
         self.data['age_cat'] = np.where(self.data['age_cat'] == 'Greater than 45', 45, self.data['age_cat'])
         self.data['age_cat'] = np.where(self.data['age_cat'] == '25 - 45', 25, self.data['age_cat'])
         self.data['age_cat'] = np.where(self.data['age_cat'] == 'Less than 25', 0, self.data['age_cat'])
@@ -74,3 +72,5 @@ class CompasData(Data):
     # def transform(self): # LATER
     #    # will probably rename later. but something for merging attributes into binary ones?
     #    raise NotImplementedError
+
+compas = CompasData()
