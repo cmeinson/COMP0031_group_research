@@ -34,6 +34,9 @@ class Metrics:
         self._preds = preds
         self.groups = {}
 
+    def get_all_names():
+        return Metrics.get_attribute_dependant() + Metrics.get_attribute_independant() + Metrics.get_subgroup_dependant()
+
     def get_subgroup_dependant():
         # metrics that need a list of attributes as input to create subgroups
         return [Metrics.DF]

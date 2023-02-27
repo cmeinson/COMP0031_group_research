@@ -29,13 +29,40 @@ class Tester:
     def run_test(self, metric_names: List[str], dataset: str,
                  bias_mit: str, ml_method: str, bias_ml_method: str = None, repetitions = 1,
                  data_preprocessing: str = None, sensitive_attr: List[str] = None, other={}):
+        """Runs the experiments and saves the results into the file given on initialization.
+        All the experiments are run with the same data set instances and therefore with the same data splits.
+
+        :param metric_names: names of the metrics to use in evaluation.
+        :type metric_names: List[str]
+        :param dataset: name of the dataset
+        :type dataset: str
+        :param bias_mit: nam of the bias mitigation method
+        :type bias_mit: str
+        :param ml_method: name of the ML method used to preict the final outcom
+        :type ml_method: str
+        :param bias_ml_method: name of the ML method for bias mitigation, defaults to None
+        :type bias_ml_method: str, optional
+        :param repetitions: nr of repetitions of the experiment, defaults to 1
+        :type repetitions: int, optional
+        :param data_preprocessing: name of the data preprocessing method, defaults to None
+        :type data_preprocessing: str, optional
+        :param sensitive_attr: list of attributes to be proteced if different from the default one in the dataset, defaults to None
+        :type sensitive_attr: List[str], optional
+        :param other: any other params described below, defaults to {}
+        :type other: dict, optional
+            "other" params:
+                "save_intermediate" - if set to True saves to file not only the mean results of all runs but also each intermediate result
+
+        :return: Used testing X and y, along with all the predictions
+        :rtype: pd.DataFrame, np.array, List[np.array]
+        """
 
         data = self._get_dataset(dataset,data_preprocessing)
         model = self._get_model(bias_mit)
 
         all_preds = []
         all_evals = None
-        for rep in range(repetitions):
+        for _ in range(repetitions):
             X, y = data.get_train_data()
             if not sensitive_attr:
                 sensitive_attr = data.get_sensitive_column_names()
@@ -45,10 +72,12 @@ class Tester:
             preds = model.predict(X, other)
             evals = self._evaluate(Metrics(X, y, preds), metric_names, sensitive_attr)
             all_evals = self._acc_evals(all_evals, evals)
-            self.save_test_results(evals, dataset, bias_mit, ml_method, bias_ml_method, sensitive_attr)
+            if repetitions==1 or ("save_intermediate" in other and other["save_intermediate"]):
+                self.save_test_results(evals, dataset, bias_mit, ml_method, bias_ml_method, sensitive_attr)
             all_preds.append(preds)
 
-        self.save_test_results(all_evals, dataset, bias_mit, ml_method, bias_ml_method, sensitive_attr)
+        if repetitions!=1:
+            self.save_test_results(all_evals, dataset, bias_mit, ml_method, bias_ml_method, sensitive_attr)
         return X, y, all_preds
        
 
@@ -117,6 +146,7 @@ class Tester:
         }
 
         entry.update({key: [np.average(evals[key])] for key in evals})
+        entry.update({"VAR|"+key: [np.var(evals[key])] for key in evals})
         res = pd.DataFrame(entry)
         
 
