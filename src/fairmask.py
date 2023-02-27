@@ -46,7 +46,6 @@ class FairMaskModel(Model):
         self._sensitive = sensitive_attributes
 
         X_non_sens = X.copy()
-        print(X_non_sens)
         X_non_sens.drop(self._sensitive, axis=1)
 
         # Build the mask_model for predicting each protected attribute
