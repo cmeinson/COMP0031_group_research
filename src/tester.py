@@ -70,6 +70,7 @@ class Tester:
 
             X, y = data.get_test_data()
             preds = model.predict(X, other)
+            X, y = data.get_test_data() # foolproofing it, in case the previous function somehow modifies X or y
             evals = self._evaluate(Metrics(X, y, preds), metric_names, sensitive_attr)
             all_evals = self._acc_evals(all_evals, evals)
             if repetitions==1 or ("save_intermediate" in other and other["save_intermediate"]):
