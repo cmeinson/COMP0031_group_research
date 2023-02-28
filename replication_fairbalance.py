@@ -7,7 +7,7 @@ results_filename = "FairBalanceAdult"
 
 metric_names = [Metrics.ACC, Metrics.F1, Metrics.M_EOD, Metrics.M_AOD]
 
-dataset = Tester.ADULT_D
+dataset = Tester.COMPAS_D
 bias_mit = Tester.FAIRBALANCE
 ml_method = BaseModel.LR
 
