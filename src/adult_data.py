@@ -4,10 +4,11 @@ import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
-
 """
-Adult Data columns: age, workclass, fnlwgt, education, education-num, marital-status, occupation, relationship, 
-                    race, sex, capital-gain, capital-loss, hours-per-week, native-country, Probability
+FairBalance Adult Data columns: age, workclass, fnlwgt, education, education-num, marital-status, occupation, relationship, 
+                    race, sex, capital-gain, capital-loss, hours-per-week, native-country
+
+FairMask Adult Data columns: age, education-num, race, sex, capital-gain, capital-loss, hours-per-week
 """
 
 class AdultData(Data):
@@ -34,18 +35,15 @@ class AdultData(Data):
         self._y = self.dataset_orig['Probability'].to_numpy()
         
         if preprocessing == "FairBalance":
-            self._X = self._preprocess_fairbalance(self._X)
-        elif preprocessing == "FairMask":
-            pass # Nothing special as of yet
+            self._X = self.fairbalance_columns(self._X)
+        # elif preprocessing == "FairMask":
+        #     pass # Nothing special as of yet
         else:
-            self._X = self._preprocess_base(self._X)
+            self._X = self.base_columns(self._X)
         
         # Create train-test split
         self._X_train, self._X_test, self._y_train, self._y_test = train_test_split(self._X, self._y,
                                                                                     test_size=tests_ratio)
-
-    def _preprocess_base(self, X):
-        return X.drop(['workclass', 'fnlwgt', 'education', 'marital-status', 'occupation', 'relationship', 'native-country'], axis=1)
         
     def pre_processing(self):
         self.dataset_orig = self.dataset_orig.dropna()
@@ -65,8 +63,11 @@ class AdultData(Data):
         self.dataset_orig['age'] = np.where((self.dataset_orig['age'] >= 10 ) & (self.dataset_orig['age'] < 10), 10, self.dataset_orig['age'])
         self.dataset_orig['age'] = np.where(self.dataset_orig['age'] < 10, 0, self.dataset_orig['age'])
 
-    def _preprocess_fairbalance(self, X):
-        return X.drop(['fnlwgt', 'education'], axis=1)
+    def base_columns(self, X):
+        return X.drop(['workclass', 'fnlwgt', 'education', 'marital-status', 'occupation', 'relationship', 'native-country'], axis=1)
+
+    def fairbalance_columns(self, X):
+        return X.drop(['fnlwgt', 'education', 'Probability'], axis=1)
     
     def get_sensitive_column_names(self) -> List[str]:
         """

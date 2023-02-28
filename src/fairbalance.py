@@ -42,8 +42,7 @@ class FairBalanceModel(Model):
         
         self.encode_data(X)
         sample_weight = self.FairBalance(X, y, sensitive_attributes)
-        X_encoded = self.processor.fit_transform(X)
-        self._model.fit(X_encoded, y, sample_weight)
+        self._model.fit(self.processor.fit_transform(X), y, sample_weight)
 
 
     def predict(self, X: pd.DataFrame, other: Dict[str, Any] = {}) -> np.array:
