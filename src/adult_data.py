@@ -36,10 +36,8 @@ class AdultData(Data):
         
         if preprocessing == "FairBalance":
             self._X = self.fairbalance_columns(self._X)
-        # elif preprocessing == "FairMask":
-        #     pass # Nothing special as of yet
         else:
-            self._X = self.base_columns(self._X)
+            self._X = self.fairmask_columns(self._X)
         
         # Create train-test split
         self._X_train, self._X_test, self._y_train, self._y_test = train_test_split(self._X, self._y,
@@ -63,7 +61,7 @@ class AdultData(Data):
         self.dataset_orig['age'] = np.where((self.dataset_orig['age'] >= 10 ) & (self.dataset_orig['age'] < 10), 10, self.dataset_orig['age'])
         self.dataset_orig['age'] = np.where(self.dataset_orig['age'] < 10, 0, self.dataset_orig['age'])
 
-    def base_columns(self, X):
+    def fairmask_columns(self, X):
         return X.drop(['workclass', 'fnlwgt', 'education', 'marital-status', 'occupation', 'relationship', 'native-country'], axis=1)
 
     def fairbalance_columns(self, X):
