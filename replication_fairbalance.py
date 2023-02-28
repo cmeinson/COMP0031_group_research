@@ -12,7 +12,7 @@ bias_mit = Tester.FAIRBALANCE
 ml_method = BaseModel.LR
 
 tester = Tester(os.path.join("results",results_filename))
-X, y, preds = tester.run_test(metric_names, dataset, bias_mit, ml_method, 
-                              data_preprocessing="FairBalancePreprocessing")
+X, y, preds = tester.run_test(metric_names, dataset, bias_mit, ml_method,
+                              data_preprocessing="FairBalance")
 
 

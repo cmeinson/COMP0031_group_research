@@ -1,5 +1,3 @@
 timestamp,nr samples,Dataset,Bias Mitigation,ML method,ML bias mit,Sensitive attrs,accuracy,f1score,[MEOD] M Equal Opportunity Difference,[MEOD] M Average Odds Difference,VAR|accuracy,VAR|f1score,VAR|[MEOD] M Equal Opportunity Difference,VAR|[MEOD] M Average Odds Difference
-2023-02-28 16:29:08.131048,1.0,Adult Dataset,FairBalance Bias Mitigation,LogisticRegression,,"['race', 'sex']",0.7460463688008598,0.55823,0.06702,0.04078,0.0,0.0,0.0,0.0
-2023-02-26 22:19:35.368449,,Adult Dataset,FairBalance Bias Mitigation,LogisticRegression,,"['race', 'sex']",0.745892829725165,,,,,,,
-2023-02-26 22:04:29.651812,,Adult Dataset,FairBalance Bias Mitigation,LogisticRegression,,"['race', 'sex']",0.7422078919084907,,,,,,,
-2023-02-26 22:02:03.409115,,Adult Dataset,FairBalance Bias Mitigation,LogisticRegression,,"['race', 'sex']",0.753109166282819,,,,,,,
+2023-02-28 20:32:23.991156,1,Adult Dataset,FairBalance Bias Mitigation,LogisticRegression,,"['race', 'sex']",1.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0
+2023-02-28 20:31:17.031629,1,Adult Dataset,FairBalance Bias Mitigation,LogisticRegression,,"['race', 'sex']",1.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0
