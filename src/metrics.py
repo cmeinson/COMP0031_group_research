@@ -1,11 +1,11 @@
 import numpy as np
 import pandas as pd
-from typing import List
+from typing import List, Callable
 import warnings
 from sklearn import metrics
 from collections import defaultdict
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, confusion_matrix
-from aif360.sklearn.metrics import statistical_parity_difference, equal_opportunity_difference, average_odds_difference, disparate_impact_ratio, df_bias_amplification
+#from aif360.sklearn.metrics import statistical_parity_difference, equal_opportunity_difference, average_odds_difference, disparate_impact_ratio, df_bias_amplification
 
 # how do we wanna do metrics?
 
@@ -34,15 +34,15 @@ class Metrics:
 
     warnings.simplefilter("ignore")
 
-    def __init__(self, X: pd.DataFrame, y: np.array, preds: np.array, model, model_other_params) -> None:
+    def __init__(self, X: pd.DataFrame, y: np.array, preds: np.array, predict: Callable[[pd.DataFrame], np.array]) -> None:
         # might need more attributes idk
         self._X = X # not even sure if needed
-        self._X.reset_index(drop=True, inplace=True)
+        self._X.reset_index(drop=True, inplace=True) # TODO: would it be better for everyone if this was done in the data class?
         self._y = y
         self._preds = preds
+        self._predict = predict
         self.groups = defaultdict(list)
-        self.model = model
-        self.model_other_params = model_other_params
+        self._round = lambda x: round(x,5)
 
     def get_all_names():
         return Metrics.get_attribute_dependant() + Metrics.get_attribute_independant() + Metrics.get_subgroup_dependant()
@@ -89,7 +89,7 @@ class Metrics:
             return self.fr(attr)
         else:
             raise RuntimeError("Invalid metric name: ", metric_name)
-    
+
     def accuracy(self) -> float:
         return accuracy_score(self._y, self._preds)
         #return np.mean(self._y == self._preds)
@@ -97,14 +97,14 @@ class Metrics:
     # etc other metrics
 
     def precision(self) -> float:
-        return round(precision_score(self._y, self._preds),2)
+        return self._round(precision_score(self._y, self._preds))
 
     def recall(self) -> float:
-        return round(recall_score(self._y, self._preds),2)
-    
+        return self._round(recall_score(self._y, self._preds))
+
     def f1score(self) -> float:
-        return round(f1_score(self._y, self._preds),2)
-    
+        return self._round(f1_score(self._y, self._preds))
+
     def aod(self, attribute):
         for i in range(len(self._y)):
             group = tuple([self._X[attribute][i]])
@@ -119,7 +119,7 @@ class Metrics:
         tpr1 = conf1['tp'] / (conf1['tp'] + conf1['fn'])
         fpr0 = conf0['fp'] / (conf0['fp'] + conf0['tn'])
         fpr1 = conf1['fp'] / (conf1['fp'] + conf1['tn'])
-        return abs(round(0.5 * (tpr1 + fpr1 - tpr0 - fpr0),2))
+        return abs(self._round(0.5 * (tpr1 + fpr1 - tpr0 - fpr0)))
 
     def eod(self, attribute) -> float:
         for i in range(len(self._y)):
@@ -133,7 +133,7 @@ class Metrics:
         conf1 = self.confusionMatrix(ind1)
         tpr0 = conf0['tp'] / (conf0['tp'] + conf0['fn'])
         tpr1 = conf1['tp'] / (conf1['tp'] + conf1['fn'])
-        return abs(round(tpr1 - tpr0,2))
+        return abs(self._round(tpr1 - tpr0))
 
     def spd(self, attribute) -> float:
         for i in range(len(self._y)):
@@ -147,7 +147,7 @@ class Metrics:
         conf1 = self.confusionMatrix(ind1)
         pr0 = (conf0['tp']+conf0['fp']) / len(ind0)
         pr1 = (conf1['tp']+conf1['fp']) / len(ind1)
-        return abs(round(pr1 - pr0,2))
+        return abs(self._round(pr1 - pr0))
 
     def di(self, attribute) -> float:
         for i in range(len(self._y)):
@@ -162,18 +162,18 @@ class Metrics:
         pr0 = (conf0['tp']+conf0['fp']) / len(ind0)
         pr1 = (conf1['tp']+conf1['fp']) / len(ind1)
         di = pr1/pr0
-        return round(abs(1-di),2)
-    
+        return self._round(abs(1-di))
+
     def fr(self, attribute):
         X_flip = self.flip_X(attribute)
-        preds_flip = self.model.predict(X_flip, self.model_other_params)
+        preds_flip = self._predict(X_flip)
         total = self._X.shape[0]
         same = np.count_nonzero(self._preds==preds_flip)
-        return round((total-same)/total,2)
-    
+        return self._round((total-same)/total)
+
     #def df(self, attr) -> float:
         #return np.mean(disparate_impact_ratio(pd.Series(self._y), self._preds))
-    
+
     #def sf(self, attr) -> float:
 
     def meod(self, attributes, a=None):
@@ -183,8 +183,8 @@ class Metrics:
                 self.groups[group] = []
             self.groups[group].append(i)
         tprs = self.tprs()
-        return abs(round(max(tprs.values())-min(tprs.values()),2))
-        
+        return abs(self._round(max(tprs.values())-min(tprs.values())))
+
     def maod(self, attributes, a=None):
         for i in range(len(self._y)):
             group = tuple([self._X[attr][i] for attr in attributes])
@@ -192,8 +192,8 @@ class Metrics:
                 self.groups[group] = []
             self.groups[group].append(i)
         aos = self.aos()
-        return abs(round(max(aos.values()) - min(aos.values()),2))
-        
+        return abs(self._round(max(aos.values()) - min(aos.values())))
+
     def confusionMatrix(self, sub=None):
         if sub is None:
             sub = range(len(self._y))
@@ -210,7 +210,7 @@ class Metrics:
             elif y[i]==1 and y_pred[i]==0:
                 conf['fn'] += 1
         return conf
-    
+
     def tprs(self):
         tprs = {}
         for group in self.groups:
@@ -219,7 +219,7 @@ class Metrics:
             tpr = conf['tp'] / (conf['tp'] + conf['fn'])
             tprs[group] = tpr
         return tprs
-    
+
     def fprs(self):
         fprs = {}
         for group in self.groups:
@@ -228,13 +228,13 @@ class Metrics:
             fpr = conf['fp'] / (conf['fp'] + conf['tn'])
             fprs[group] = fpr
         return fprs
-    
+
     def aos(self):
         tprs = self.tprs()
         fprs = self.fprs()
         aos = {key: (tprs[key]+fprs[key])/2 for key in tprs}
         return aos
-        
+
     def prs(self):
         prs = {}
         for group in self.groups:
@@ -243,7 +243,7 @@ class Metrics:
             pr = (conf['tp']+conf['fp']) / len(sub)
             prs[group] = pr
         return prs
-    
+
     def flip_X(self,attribute):
         X_flip = self._X.copy()
         X_flip[attribute] = np.where(X_flip[attribute]==1, 0, 1)

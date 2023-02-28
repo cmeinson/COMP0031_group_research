@@ -56,31 +56,35 @@ class Tester:
         :return: Used testing X and y, along with all the predictions
         :rtype: pd.DataFrame, np.array, List[np.array]
         """
-
         data = self._get_dataset(dataset,data_preprocessing)
         model = self._get_model(bias_mit)
 
+        if not sensitive_attr:
+            sensitive_attr = data.get_sensitive_column_names()
+
         all_preds = []
         all_evals = None
+
         for _ in range(repetitions):
             X, y = data.get_train_data()
-            if not sensitive_attr:
-                sensitive_attr = data.get_sensitive_column_names()
             model.train(X, y, sensitive_attr, ml_method, bias_ml_method, other)
 
             X, y = data.get_test_data()
-            preds = model.predict(X, other)
-            X, y = data.get_test_data() # foolproofing it, in case the previous function somehow modifies X or y
-            evals = self._evaluate(Metrics(X, y, preds, model, other), metric_names, sensitive_attr)
+            predict = lambda x: model.predict(x.copy(), other)
+            preds = predict(X)
+            evals = self._evaluate(Metrics(X, y, preds, predict), metric_names, sensitive_attr)
+
             all_evals = self._acc_evals(all_evals, evals)
+            all_preds.append(preds)
+
             if repetitions==1 or ("save_intermediate" in other and other["save_intermediate"]):
                 self.save_test_results(evals, dataset, bias_mit, ml_method, bias_ml_method, sensitive_attr)
-            all_preds.append(preds)
 
         if repetitions!=1:
             self.save_test_results(all_evals, dataset, bias_mit, ml_method, bias_ml_method, sensitive_attr)
-        return X, y, all_preds
-       
+
+        return *data.get_test_data(), all_preds
+
 
     def _acc_evals(self, acc, evals):
         if acc is None:
@@ -88,7 +92,7 @@ class Tester:
         else:
             for (key, val) in evals.items():
                 acc[key].append(val)
-        return acc   
+        return acc
 
 
     def _evaluate(self, metrics: Metrics, metric_names: List[str], sensitive_attr):
@@ -149,7 +153,7 @@ class Tester:
         entry.update({key: [np.average(evals[key])] for key in evals})
         entry.update({"VAR|"+key: [np.var(evals[key])] for key in evals})
         res = pd.DataFrame(entry)
-        
+
 
         if self._file and path.exists(self._file):
             res = pd.concat([res, pd.read_csv(self._file)], ignore_index=True)
