@@ -3,16 +3,16 @@ from src import *
 
 # Just an example for now
 
-n_repetitions = 10
+n_repetitions = 1
 same_data_split = True
 results_filename = "heheh"
 other = {"save_intermediate": False}
 
 datasets =  [Tester.ADULT_D, Tester.COMPAS_D]
-mls = [(Tester.BASE_ML, BaseModel.LR, None, "FairBalance"), 
-       (Tester.FAIRBALANCE, FairBalanceModel.LOGR, None, "FairBalance"), 
-       (Tester.BASE_ML, BaseModel.RF, None, None), 
-       (Tester.FAIRMASK, FairMaskModel.RF, FairMaskModel.DT, None)
+mls = [(Tester.BASE_ML, Model.LG_R, None, "FairBalance"), 
+       (Tester.FAIRBALANCE, Model.LG_R, None, "FairBalance"), 
+       (Tester.BASE_ML, Model.RF_C, None, None), 
+       (Tester.FAIRMASK, Model.RF_C, Model.DT_R, None)
 ]
 metric_names = Metrics.get_all_names()
 results_file = os.path.join("results",results_filename +".csv")

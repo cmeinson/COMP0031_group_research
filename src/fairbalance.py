@@ -2,10 +2,7 @@ from .ml_interface import Model
 from typing import List, Dict, Any
 import numpy as np
 import pandas as pd
-from sklearn.linear_model import LogisticRegression
-from sklearn.compose import ColumnTransformer
 from sklearn.compose import make_column_selector as selector
-from sklearn.preprocessing import StandardScaler, OneHotEncoder
 
 class FairBalanceModel(Model):
     LOGR = "LogisticRegression" 
@@ -34,11 +31,7 @@ class FairBalanceModel(Model):
         :param other: dictionary of any other params that we might wish to pass?, defaults to {}
         :type other: Dict[str, Any], optional
         """
-
-        if method == self.LOGR:
-            self._model = LogisticRegression(max_iter=100000)
-        else:
-            raise RuntimeError("Invalid ml method name: ", method)
+        self._model = self._get_model(method)
         
         sample_weight = self.FairBalance(X, y, sensitive_attributes)
         self._model.fit(X, y, sample_weight)
