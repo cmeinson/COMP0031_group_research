@@ -67,10 +67,11 @@ class Data:
 
 class DummyData(Data):
     def __init__(self, preprocessing = None, test_ratio=0.2) -> None:
-        data = [[0.1, 0], [0.4, 0], [0.5, 0], [0.3, 1], [0.4, 1], [0.7, 1]]
+        data = [[0.31, 0], [0.41, 0], [0.51, 0], [0.71, 0], [0.81, 0], [0.91, 0], 
+                [0.2, 1], [0.3, 1], [0.4, 1], [0.5, 1], [0.6, 1], [0.7, 1]]
         self._X = pd.DataFrame(data, columns=["attr", "sensitive"])
-        self._y = np.array([0, 1, 1, 0, 1, 1])
-        self._tests_ratio = test_ratio
+        self._y = np.array([0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1,])
+        self._test_ratio = test_ratio
         self.new_data_split()        
 
     def get_sensitive_column_names(self) -> List[str]:

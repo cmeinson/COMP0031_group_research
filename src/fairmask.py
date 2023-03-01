@@ -45,8 +45,7 @@ class FairMaskModel(Model):
         self._mask_models = {}
         self._sensitive = sensitive_attributes
 
-        X_non_sens = X.copy()
-        X_non_sens.drop(self._sensitive, axis=1)
+        X_non_sens = X.copy().drop(columns=self._sensitive)
 
         # Build the mask_model for predicting each protected attribute
         for attr in sensitive_attributes: # ngl this code very sketchy but whatever will just copy what they did for now 
@@ -95,8 +94,7 @@ class FairMaskModel(Model):
         threshold = 0.5
 
         X_out = X.copy()
-        X_non_sens = X.copy()
-        X_non_sens.drop(self._sensitive, axis=1)
+        X_non_sens = X.copy().drop(columns=self._sensitive)
 
         for attr in self._sensitive: 
             mask_model = self._mask_models[attr]
@@ -104,6 +102,7 @@ class FairMaskModel(Model):
             if self._method_bias == self.DT or self._method_bias == self.LOG:
                 mask = np.where(mask >= threshold, 1, 0) # substitute to the reg2clf function
             X_out.loc[:, attr] = mask
+    
         return X_out
 
 
