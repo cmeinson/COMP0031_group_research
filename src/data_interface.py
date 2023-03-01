@@ -9,7 +9,7 @@ from sklearn.compose import ColumnTransformer
 class Data:
     # NB: if ur implementation of the class takes more than one file pls put it all into sub folder
 
-    def __init__(self, preprocessing:str = None, tests_ratio = 0.2) -> None:
+    def __init__(self, preprocessing:str = None, test_ratio = 0.2) -> None:
         """
         - reads the according dataset from the ata folder,
         - runs cleaning and preprocessing methods, chosen based on the preprocessing param
@@ -21,6 +21,11 @@ class Data:
         :type tests_ratio: float, optional
         """
         raise NotImplementedError
+    
+    def new_data_split(self) -> None:
+        """Changes the data split"""
+        self._X_train, self._X_test, self._y_train, self._y_test = train_test_split(self._X, self._y,
+                                                                                    test_size=self._test_ratio)
 
     def get_train_data(self) -> Tuple[pd.DataFrame, np.array]:
         """Returns the training data where
@@ -65,8 +70,8 @@ class DummyData(Data):
         data = [[0.1, 0], [0.4, 0], [0.5, 0], [0.3, 1], [0.4, 1], [0.7, 1]]
         self._X = pd.DataFrame(data, columns=["attr", "sensitive"])
         self._y = np.array([0, 1, 1, 0, 1, 1])
-        self._X_train, self._X_test, self._y_train, self._y_test = train_test_split(self._X, self._y,
-                                                                                    test_size=test_ratio)
+        self._tests_ratio = test_ratio
+        self.new_data_split()        
 
     def get_sensitive_column_names(self) -> List[str]:
         return ["sensitive"]

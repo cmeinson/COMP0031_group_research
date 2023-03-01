@@ -22,13 +22,17 @@ class Tester:
     FAIRMASK = "FairMask Bias Mitigation"
     BASE_ML = "No Bias Mitigation"
 
-    def __init__(self, output_filename) -> None:
+    def __init__(self, output_file) -> None:
         self._initd_data = {}
-        self._file = output_filename + ".csv"
+        self._file = output_file
+        self._preds = None
+        self._evals = None
+        self._data = None
 
-    def run_test(self, metric_names: List[str], dataset: str,
-                 bias_mit: str, ml_method: str, bias_ml_method: str = None, repetitions = 1,
-                 data_preprocessing: str = None, sensitive_attr: List[str] = None, other={}):
+    def run_test(self, metric_names: List[str], dataset: str, 
+                 bias_mit: str, ml_method: str, bias_ml_method: str = None, 
+                 repetitions = 1, same_data_split = False,
+                 data_preprocessing: str = None, sensitive_attr: List[str] = None, other={}):        
         """Runs the experiments and saves the results into the file given on initialization.
         All the experiments are run with the same data set instances and therefore with the same data splits.
 
@@ -44,6 +48,8 @@ class Tester:
         :type bias_ml_method: str, optional
         :param repetitions: nr of repetitions of the experiment, defaults to 1
         :type repetitions: int, optional
+        :param same_data_split: when set to False, each repetition of the experiment will be done with a new data split, defaults to False
+        :type same_data_split: bool, optional
         :param data_preprocessing: name of the data preprocessing method, defaults to None
         :type data_preprocessing: str, optional
         :param sensitive_attr: list of attributes to be proteced if different from the default one in the dataset, defaults to None
@@ -56,44 +62,51 @@ class Tester:
         :return: Used testing X and y, along with all the predictions
         :rtype: pd.DataFrame, np.array, List[np.array]
         """
-        data = self._get_dataset(dataset,data_preprocessing)
         model = self._get_model(bias_mit)
+        self._data = self._get_dataset(dataset,data_preprocessing)
 
         if not sensitive_attr:
-            sensitive_attr = data.get_sensitive_column_names()
+            sensitive_attr = self._data.get_sensitive_column_names()
 
-        all_preds = []
-        all_evals = None
+        self._preds = []
+        self._evals = None
 
         for _ in range(repetitions):
-            X, y = data.get_train_data()
+            if not same_data_split: self._data.new_data_split()
+            
+            X, y = self._data.get_train_data()
             model.train(X, y, sensitive_attr, ml_method, bias_ml_method, other)
 
-            X, y = data.get_test_data()
+            X, y = self._data.get_test_data()
             predict = lambda x: model.predict(x.copy(), other)
-            preds = predict(X)
-            evals = self._evaluate(Metrics(X, y, preds, predict), metric_names, sensitive_attr)
+            rep_preds = predict(X)
+            evals = self._evaluate(Metrics(X, y, rep_preds, predict), metric_names, sensitive_attr)
 
-            all_evals = self._acc_evals(all_evals, evals)
-            all_preds.append(preds)
+            self._acc_evals(evals)
+            self._preds.append(rep_preds)
 
             if repetitions==1 or ("save_intermediate" in other and other["save_intermediate"]):
-                self.save_test_results(evals, dataset, bias_mit, ml_method, bias_ml_method, sensitive_attr)
+                self.save_test_results(evals, dataset, bias_mit, ml_method, bias_ml_method, sensitive_attr, same_data_split)
 
         if repetitions!=1:
-            self.save_test_results(all_evals, dataset, bias_mit, ml_method, bias_ml_method, sensitive_attr)
+            self.save_test_results(self._evals, dataset, bias_mit, ml_method, bias_ml_method, sensitive_attr, same_data_split)
 
-        return *data.get_test_data(), all_preds
+    def get_last_run_preds(self): 
+        return self._preds
 
+    def get_last_mean_evals(self):
+        return {key: [np.average(self._evals[key])] for key in self._evals}
 
-    def _acc_evals(self, acc, evals):
-        if acc is None:
-            acc = {key:[val] for (key,val) in evals.items()}
+    def get_last_data_split(self):
+        # in case neded for debugging:)
+        return *self._data.get_test_data(), *self._data.get_train_data()
+    
+    def _acc_evals(self, evals):
+        if self._evals is None:
+            self._evals = {key:[val] for (key,val) in evals.items()}
         else:
             for (key, val) in evals.items():
-                acc[key].append(val)
-        return acc
-
+                self._evals[key].append(val)
 
     def _evaluate(self, metrics: Metrics, metric_names: List[str], sensitive_attr):
         evals = {}
@@ -137,12 +150,13 @@ class Tester:
 
     def save_test_results(self, evals: Dict[str, Any], dataset: str,
                           bias_mit: str, ml_method: str, bias_ml_method: str,
-                          sensitive_attr: List[str], other={}):
+                          sensitive_attr: List[str], same_data_split):
         nr_samples = np.size(list(evals.values())[0])
 
         entry = {
             "timestamp": [pd.Timestamp.now()],
             "nr samples": [nr_samples],
+            "same data split": [same_data_split],
             "Dataset": [dataset],
             "Bias Mitigation": [bias_mit],
             "ML method": [ml_method],
