@@ -61,7 +61,7 @@ class AdultData(Data):
         self.dataset_orig['age'] = np.where(self.dataset_orig['age'] < 10, 0, self.dataset_orig['age'])
 
     def fairmask_columns(self, X):
-        return X.drop(['workclass', 'fnlwgt', 'education', 'marital-status', 'occupation', 'relationship', 'native-country'], axis=1)
+        return X.drop(['workclass', 'fnlwgt', 'education', 'marital-status', 'occupation', 'relationship', 'native-country', 'Probability'], axis=1)
 
     def fairbalance_columns(self, X):
         return X.drop(['fnlwgt', 'education', 'Probability'], axis=1)

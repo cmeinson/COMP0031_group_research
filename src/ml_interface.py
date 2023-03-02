@@ -107,15 +107,23 @@ class Model:
 
 
 class BaseModel(Model):
+    OPT_FBALANCE = "Apply fairbalance column transform"
 
     def __init__(self, other: Dict[str, Any] = {}) -> None:
+        self._use_transformer = (self.OPT_FBALANCE in other) and (other[self.OPT_FBALANCE])    
         self._model = None
 
     def train(self, X: pd.DataFrame, y: np.array, sensitive_atributes: List[str], method, method_bias = None, other: Dict[str, Any] = {}):
         self._model = self._get_model(method, other)  
-        self.transformer = self._get_transformer(X)        
-        self._model.fit(self.transformer.fit_transform(X), y)
+        self.transformer = self._get_transformer(X)   
+        if self._use_transformer:     
+            self._model.fit(self.transformer.fit_transform(X), y)
+        else:
+            self._model.fit(X, y)
 
     def predict(self, X: pd.DataFrame, other: Dict[str, Any] = {}) -> np.array:
-        return self._model.predict(self.transformer.transform(X))
+        if self._use_transformer:  
+            return self._model.predict(self.transformer.transform(X))
+        else:
+            return self._model.predict(X)
     
