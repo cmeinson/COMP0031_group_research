@@ -4,8 +4,8 @@ from src import *
 # Just an example for now
 
 
-n_repetitions = 50
-same_data_split = True
+n_repetitions = 10
+same_data_split = False
 results_filename = "heheh"
 other = {Tester.OPT_SAVE_INTERMID: False}
 

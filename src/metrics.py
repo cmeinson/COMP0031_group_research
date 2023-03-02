@@ -10,6 +10,11 @@ from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_sc
 # how do we wanna do metrics?
 
 # we can do just a simple metrcs class with all the mathy functions and then a separate evaluator class?
+def guard(nr): # to avoid div by 0
+    if nr == 0:
+        return 1e-10
+    return nr
+
 
 class Metrics:
     # All available metrics:
@@ -115,10 +120,10 @@ class Metrics:
         ind1 = np.where(self._X[attribute] == 1)[0]
         conf0 = self.confusionMatrix(ind0)
         conf1 = self.confusionMatrix(ind1)
-        tpr0 = conf0['tp'] / (conf0['tp'] + conf0['fn'])
-        tpr1 = conf1['tp'] / (conf1['tp'] + conf1['fn'])
-        fpr0 = conf0['fp'] / (conf0['fp'] + conf0['tn'])
-        fpr1 = conf1['fp'] / (conf1['fp'] + conf1['tn'])
+        tpr0 = conf0['tp'] / guard(conf0['tp'] + conf0['fn'])
+        tpr1 = conf1['tp'] / guard(conf1['tp'] + conf1['fn'])
+        fpr0 = conf0['fp'] / guard(conf0['fp'] + conf0['tn'])
+        fpr1 = conf1['fp'] / guard(conf1['fp'] + conf1['tn'])
         return abs(self._round(0.5 * (tpr1 + fpr1 - tpr0 - fpr0)))
 
     def eod(self, attribute) -> float:
@@ -131,8 +136,8 @@ class Metrics:
         ind1 = np.where(self._X[attribute] == 1)[0]
         conf0 = self.confusionMatrix(ind0)
         conf1 = self.confusionMatrix(ind1)
-        tpr0 = conf0['tp'] / (conf0['tp'] + conf0['fn'])
-        tpr1 = conf1['tp'] / (conf1['tp'] + conf1['fn'])
+        tpr0 = conf0['tp'] / guard(conf0['tp'] + conf0['fn'])
+        tpr1 = conf1['tp'] / guard(conf1['tp'] + conf1['fn'])
         return abs(self._round(tpr1 - tpr0))
 
     def spd(self, attribute) -> float:
@@ -145,8 +150,8 @@ class Metrics:
         ind1 = np.where(self._X[attribute] == 1)[0]
         conf0 = self.confusionMatrix(ind0)
         conf1 = self.confusionMatrix(ind1)
-        pr0 = (conf0['tp']+conf0['fp']) / len(ind0)
-        pr1 = (conf1['tp']+conf1['fp']) / len(ind1)
+        pr0 = (conf0['tp']+conf0['fp']) / guard(len(ind0))
+        pr1 = (conf1['tp']+conf1['fp']) / guard(len(ind1))
         return abs(self._round(pr1 - pr0))
 
     def di(self, attribute) -> float:
@@ -159,9 +164,9 @@ class Metrics:
         ind1 = np.where(self._X[attribute] == 1)[0]
         conf0 = self.confusionMatrix(ind0)
         conf1 = self.confusionMatrix(ind1)
-        pr0 = (conf0['tp']+conf0['fp']) / len(ind0)
-        pr1 = (conf1['tp']+conf1['fp']) / len(ind1)
-        di = pr1/pr0
+        pr0 = (conf0['tp']+conf0['fp']) / guard(len(ind0))
+        pr1 = (conf1['tp']+conf1['fp']) / guard(len(ind1))
+        di = pr1/guard(pr0)
         return self._round(abs(1-di))
 
     def fr(self, attribute):
@@ -169,7 +174,7 @@ class Metrics:
         preds_flip = self._predict(X_flip)
         total = self._X.shape[0]
         same = np.count_nonzero(self._preds==preds_flip)
-        return self._round((total-same)/total)
+        return self._round((total-same)/guard(total))
 
     #def df(self, attr) -> float:
         #return np.mean(disparate_impact_ratio(pd.Series(self._y), self._preds))
@@ -216,7 +221,7 @@ class Metrics:
         for group in self.groups:
             sub = self.groups[group]
             conf = self.confusionMatrix(sub)
-            tpr = conf['tp'] / (conf['tp'] + conf['fn'])
+            tpr = conf['tp'] / guard(conf['tp'] + conf['fn'])
             tprs[group] = tpr
         return tprs
 
@@ -225,7 +230,7 @@ class Metrics:
         for group in self.groups:
             sub = self.groups[group]
             conf = self.confusionMatrix(sub)
-            fpr = conf['fp'] / (conf['fp'] + conf['tn'])
+            fpr = conf['fp'] / guard(conf['fp'] + conf['tn'])
             fprs[group] = fpr
         return fprs
 
@@ -240,7 +245,7 @@ class Metrics:
         for group in self.groups:
             sub = self.groups[group]
             conf = self.confusionMatrix(sub)
-            pr = (conf['tp']+conf['fp']) / len(sub)
+            pr = (conf['tp']+conf['fp']) / guard(len(sub))
             prs[group] = pr
         return prs
 
@@ -248,3 +253,5 @@ class Metrics:
         X_flip = self._X.copy()
         X_flip[attribute] = np.where(X_flip[attribute]==1, 0, 1)
         return X_flip
+    
+
