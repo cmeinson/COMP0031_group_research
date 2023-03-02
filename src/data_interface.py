@@ -43,6 +43,8 @@ class Data:
         :rtype: List[str]
         """
         raise NotImplementedError
+    
+
 
 class DummyData(Data):
     def __init__(self, preprocessing = None, test_ratio=0.2) -> None:

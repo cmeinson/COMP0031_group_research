@@ -3,16 +3,25 @@ from src import *
 import warnings
 warnings.filterwarnings("ignore")
 
-results_filename = "FairBalanceAdult"
+results_filename = "FairBalance"
 
 metric_names = [Metrics.ACC, Metrics.F1, Metrics.M_EOD, Metrics.M_AOD]
 
-dataset = Tester.COMPAS_D
-bias_mit = Tester.FAIRBALANCE
-ml_method = BaseModel.LR
+datasets = [Tester.ADULT_D,Tester.COMPAS_D]
+mls = [(Tester.FAIRBALANCE, FairBalanceModel.LOGR, None, "FairBalance"),
+       (Tester.BASE_ML, BaseModel.LR, None, "FairBalance")
+      ]
 
-tester = Tester(os.path.join("results",results_filename))
-X, y, preds = tester.run_test(metric_names, dataset, bias_mit, ml_method,
-                              data_preprocessing="FairBalance")
+repetitions = 10
+
+for i in range(1): # diff data splits
+    tester = Tester(os.path.join("results",results_filename))
+    for dataset in datasets:
+        for bias_mit, method, method2, preprocessing in mls:
+            X, y, preds = tester.run_test(metric_names, dataset, bias_mit, method, method2, repetitions, data_preprocessing=preprocessing)
+
+
+
+
 
 
