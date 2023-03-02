@@ -3,12 +3,12 @@ from src import *
 
 # Just an example for now
 
-n_repetitions = 1
+n_repetitions = 50
 same_data_split = True
 results_filename = "heheh"
 other = {"save_intermediate": False}
 
-datasets =  [Tester.ADULT_D, Tester.COMPAS_D]
+datasets =  [Tester.COMPAS_D]
 mls = [(Tester.BASE_ML, Model.LG_R, None, "FairBalance"), 
        (Tester.FAIRBALANCE, Model.LG_R, None, "FairBalance"), 
        (Tester.BASE_ML, Model.RF_C, None, None), 

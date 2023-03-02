@@ -68,8 +68,9 @@ class Tester:
         if not sensitive_attr:
             sensitive_attr = self._data.get_sensitive_column_names()
 
+        n_test_datas = len(self._data.race_all_splits)
         self._preds = []
-        self._evals = None
+        self._evals = [None for _ in range(n_test_datas)]
 
         for _ in range(repetitions):
             if not same_data_split: self._data.new_data_split()
@@ -77,36 +78,44 @@ class Tester:
             X, y = self._data.get_train_data()
             model.train(X, y, sensitive_attr, ml_method, bias_ml_method, other)
 
-            X, y = self._data.get_test_data()
-            predict = lambda x: model.predict(x.copy(), other)
-            rep_preds = predict(X)
-            evals = self._evaluate(Metrics(X, y, rep_preds, predict), metric_names, sensitive_attr)
+            splits = self._data.get_all_test_data()
+            for i in range(len(splits)):
+                X, y = splits[i]
+                #X, y = self._data.get_test_data()
+                predict = lambda x: model.predict(x.copy(), other)
+                rep_preds = predict(X)
+                # TODO: HERE: in a for loop evaluate on multiple data sets. in data set have func to get multiple test datas.
+                evals = self._evaluate(Metrics(X, y, rep_preds, predict), metric_names, sensitive_attr)
 
-            self._acc_evals(evals)
-            self._preds.append(rep_preds)
+                self._acc_evals(evals, i) #
+                self._preds.append(rep_preds)
 
-            if repetitions==1 or ("save_intermediate" in other and other["save_intermediate"]):
-                self.save_test_results(evals, dataset, bias_mit, ml_method, bias_ml_method, sensitive_attr, same_data_split)
+                if repetitions==1 or ("save_intermediate" in other and other["save_intermediate"]):
+                    race_split = self._data.race_all_splits[i]
+                    self.save_test_results(evals, dataset, bias_mit, ml_method, bias_ml_method, sensitive_attr, same_data_split, race_split)
 
-        if repetitions!=1:
-            self.save_test_results(self._evals, dataset, bias_mit, ml_method, bias_ml_method, sensitive_attr, same_data_split)
+        splits = self._data.get_all_test_data()
+        for i in range(len(splits)):
+            if repetitions!=1:
+                race_split = self._data.race_all_splits[i]
+                self.save_test_results(self._evals[i], dataset, bias_mit, ml_method, bias_ml_method, sensitive_attr, same_data_split, race_split)
 
     def get_last_run_preds(self): 
         return self._preds
 
     def get_last_mean_evals(self):
-        return {key: [np.average(self._evals[key])] for key in self._evals}
+        return {key: [np.average(self._evals[0][key])] for key in self._evals[0]}
 
     def get_last_data_split(self):
         # in case neded for debugging:)
         return *self._data.get_test_data(), *self._data.get_train_data()
     
-    def _acc_evals(self, evals):
-        if self._evals is None:
-            self._evals = {key:[val] for (key,val) in evals.items()}
+    def _acc_evals(self, evals, i = 0):
+        if self._evals[i] is None:
+            self._evals[i] = {key:[val] for (key,val) in evals.items()}
         else:
             for (key, val) in evals.items():
-                self._evals[key].append(val)
+                self._evals[i][key].append(val)
 
     def _evaluate(self, metrics: Metrics, metric_names: List[str], sensitive_attr):
         evals = {}
@@ -150,7 +159,7 @@ class Tester:
 
     def save_test_results(self, evals: Dict[str, Any], dataset: str,
                           bias_mit: str, ml_method: str, bias_ml_method: str,
-                          sensitive_attr: List[str], same_data_split):
+                          sensitive_attr: List[str], same_data_split, race_split):
         nr_samples = np.size(list(evals.values())[0])
 
         entry = {
@@ -161,7 +170,8 @@ class Tester:
             "Bias Mitigation": [bias_mit],
             "ML method": [ml_method],
             "ML bias mit": [bias_ml_method],
-            "Sensitive attrs": [sensitive_attr]
+            "Sensitive attrs": [sensitive_attr],
+            "Race split": [race_split]
         }
 
         entry.update({key: [np.average(evals[key])] for key in evals})
