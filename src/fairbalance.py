@@ -34,11 +34,7 @@ class FairBalanceModel(Model):
         :param other: dictionary of any other params that we might wish to pass?, defaults to {}
         :type other: Dict[str, Any], optional
         """
-
-        if method == self.LOGR:
-            self._model = LogisticRegression(max_iter=100000)
-        else:
-            raise RuntimeError("Invalid ml method name: ", method)
+        self._model = self._get_model(method)
         
         self.encode_data(X)
         sample_weight = self.FairBalance(X, y, sensitive_attributes)

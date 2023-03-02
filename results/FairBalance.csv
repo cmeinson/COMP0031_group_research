@@ -1,8 +1,5 @@
-timestamp,nr samples,Dataset,Bias Mitigation,ML method,ML bias mit,Sensitive attrs,accuracy,f1score,[MEOD] M Equal Opportunity Difference,[MEOD] M Average Odds Difference,VAR|accuracy,VAR|f1score,VAR|[MEOD] M Equal Opportunity Difference,VAR|[MEOD] M Average Odds Difference
-2023-03-02 13:05:37.070061,10,Compas Dataset,No Bias Mitigation,LogisticRegression,,"['sex', 'race']",0.6826722338204593,0.7269500000000001,0.2610100000000001,0.29876,0.0,1.232595164407831e-32,3.0814879110195774e-33,0.0
-2023-03-02 13:05:35.420297,10,Compas Dataset,FairBalance Bias Mitigation,LogisticRegression,,"['sex', 'race']",0.6722338204592901,0.6939599999999999,0.04497,0.0690999999999999,0.0,1.232595164407831e-32,0.0,1.9259299443872363e-34
-2023-03-02 13:05:32.376224,10,Adult Dataset,No Bias Mitigation,LogisticRegression,,"['race', 'sex']",0.855980346998311,0.67249,0.14216,0.10527,0.0,0.0,0.0,0.0
-2023-03-02 13:05:26.124232,10,Adult Dataset,FairBalance Bias Mitigation,LogisticRegression,,"['race', 'sex']",0.8157531091662829,0.68051,0.07962,0.0386699999999999,0.0,0.0,0.0,4.814824860968091e-35
-2023-03-02 13:02:21.744868,10,Adult Dataset,FairBalance Bias Mitigation,LogisticRegression,,"['race', 'sex']",0.8119146322739137,0.67974,0.1180199999999999,0.04067,0.0,0.0,1.9259299443872363e-34,0.0
-2023-03-02 12:54:17.970113,10,Compas Dataset,FairBalance Bias Mitigation,LogisticRegression,,"['sex', 'race']",0.6631871955462769,0.68241,0.09058,0.05977,0.0,0.0,0.0,4.814824860968091e-35
-2023-03-02 12:54:14.033522,10,Adult Dataset,FairBalance Bias Mitigation,LogisticRegression,,"['race', 'sex']",0.8136035621065562,0.67488,0.11264,0.1122399999999999,0.0,0.0,0.0,7.703719777548943e-34
+timestamp,nr samples,same data split,Dataset,Bias Mitigation,ML method,ML bias mit,Sensitive attrs,accuracy,f1score,[MEOD] M Equal Opportunity Difference,[MEOD] M Average Odds Difference,VAR|accuracy,VAR|f1score,VAR|[MEOD] M Equal Opportunity Difference,VAR|[MEOD] M Average Odds Difference
+2023-03-02 13:28:20.329350,10,True,Compas Dataset,FairBalance Bias Mitigation,LogisticRegression,,"['sex', 'race']",0.6736256089074459,0.68375,0.0459,0.08292999999999999,1.232595164407831e-32,0.0,0.0,1.925929944387236e-34
+2023-03-02 13:28:17.086765,10,True,Compas Dataset,No Bias Mitigation,LogisticRegression,,"['sex', 'race']",0.6812804453723034,0.7165800000000001,0.29147,0.3572100000000001,0.0,1.232595164407831e-32,0.0,3.0814879110195774e-33
+2023-03-02 13:28:14.878854,10,True,Adult Dataset,FairBalance Bias Mitigation,LogisticRegression,,"['race', 'sex']",0.8079226163058498,0.65904,0.08579,0.05536,0.0,0.0,0.0,0.0
+2023-03-02 13:27:48.748840,10,True,Adult Dataset,No Bias Mitigation,LogisticRegression,,"['race', 'sex']",0.8519883310302472,0.65398,0.19967,0.15057,0.0,0.0,0.0,7.703719777548943e-34

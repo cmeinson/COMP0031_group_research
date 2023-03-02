@@ -14,7 +14,7 @@ FairMask Adult Data columns: age, education-num, race, sex, capital-gain, capita
 class AdultData(Data):
     # NB: if ur implementation of the class takes more than one file pls put it all into sub folder
 
-    def __init__(self, preprocessing:str = None, tests_ratio = 0.2) -> None:
+    def __init__(self, preprocessing:str = None, test_ratio = 0.2) -> None:
         """
         - reads the according dataset from the data folder,
         - runs cleaning and preprocessing methods, chosen based on the preprocessing param
@@ -24,7 +24,7 @@ class AdultData(Data):
         :param tests_ratio: determines the proportion of test data, defaults to 0.2
         :type tests_ratio: float, optional
         """
-
+        self._test_ratio = test_ratio
         self.dataset_orig = pd.read_csv('data/adult.csv')
 
         # Do default pre-processing from Preprocessing.ipynb
@@ -40,9 +40,8 @@ class AdultData(Data):
             self._X = self.fairmask_columns(self._X)
         
         # Create train-test split
-        self._X_train, self._X_test, self._y_train, self._y_test = train_test_split(self._X, self._y,
-                                                                                    test_size=tests_ratio)
-        
+        self.new_data_split()
+
     def pre_processing(self):
         self.dataset_orig = self.dataset_orig.dropna()
 
