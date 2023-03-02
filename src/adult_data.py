@@ -4,6 +4,13 @@ import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
+"""
+FairBalance Adult Data columns: age, workclass, fnlwgt, education, education-num, marital-status, occupation, relationship, 
+                    race, sex, capital-gain, capital-loss, hours-per-week, native-country
+
+FairMask Adult Data columns: age, education-num, race, sex, capital-gain, capital-loss, hours-per-week
+"""
+
 class AdultData(Data):
     # NB: if ur implementation of the class takes more than one file pls put it all into sub folder
 
@@ -24,20 +31,19 @@ class AdultData(Data):
         self.pre_processing()
 
         # Split into input and output
-        self._X = pd.DataFrame(self.dataset_orig, columns=["age", "education-num", "race", "sex", "capital-gain", "capital-loss", "hours-per-week"])
+        self._X = pd.DataFrame(self.dataset_orig)
         self._y = self.dataset_orig['Probability'].to_numpy()
         
         if preprocessing == "FairBalance":
-            self._preprocess_fairbalance(self._X)
-        elif preprocessing == "FairMask":
-            pass # Nothing special as of yet
+            self._X = self.fairbalance_columns(self._X)
+        else:
+            self._X = self.fairmask_columns(self._X)
         
         # Create train-test split
         self.new_data_split()
 
     def pre_processing(self):
         self.dataset_orig = self.dataset_orig.dropna()
-        self.dataset_orig = self.dataset_orig.drop(['workclass', 'fnlwgt', 'education', 'marital-status', 'occupation', 'relationship', 'native-country'], axis=1)
 
         # Binarize sex, race and income (probability)
         self.dataset_orig['sex'] = np.where(self.dataset_orig['sex'] == 'Male', 1, 0)
@@ -54,6 +60,12 @@ class AdultData(Data):
         self.dataset_orig['age'] = np.where((self.dataset_orig['age'] >= 10 ) & (self.dataset_orig['age'] < 10), 10, self.dataset_orig['age'])
         self.dataset_orig['age'] = np.where(self.dataset_orig['age'] < 10, 0, self.dataset_orig['age'])
 
+    def fairmask_columns(self, X):
+        return X.drop(['workclass', 'fnlwgt', 'education', 'marital-status', 'occupation', 'relationship', 'native-country', 'Probability'], axis=1)
+
+    def fairbalance_columns(self, X):
+        return X.drop(['fnlwgt', 'education', 'Probability'], axis=1)
+    
     def get_sensitive_column_names(self) -> List[str]:
         """
         :return: column names (in the X above) of all sensitive attributes in the given dataset

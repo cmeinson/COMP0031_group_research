@@ -2,9 +2,6 @@ from typing import List, Tuple
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import OneHotEncoder, StandardScaler
-from sklearn.compose import make_column_selector as selector
-from sklearn.compose import ColumnTransformer
 
 class Data:
     # NB: if ur implementation of the class takes more than one file pls put it all into sub folder
@@ -52,18 +49,7 @@ class Data:
         """
         raise NotImplementedError
     
-    def _preprocess_fairbalance(self, X):
-        numerical_columns_selector = selector(dtype_exclude=object)
-        categorical_columns_selector = selector(dtype_include=object)
 
-        numerical_columns = numerical_columns_selector(X)
-        categorical_columns = categorical_columns_selector(X)
-
-        categorical_processor = OneHotEncoder(handle_unknown = 'ignore')
-        numerical_processor = StandardScaler()
-        self.processor = ColumnTransformer([
-            ('OneHotEncoder', categorical_processor, categorical_columns),
-            ('StandardScaler', numerical_processor, numerical_columns)])
 
 class DummyData(Data):
     def __init__(self, preprocessing = None, test_ratio=0.2) -> None:

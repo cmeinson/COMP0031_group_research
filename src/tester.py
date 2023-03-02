@@ -12,6 +12,8 @@ from .fairbalance import FairBalanceModel
 from .fairmask import FairMaskModel
 
 class Tester:
+    OPT_SAVE_INTERMID = "save intermediate results to file"
+
     # Avalable datasets for testing:
     ADULT_D = "Adult Dataset"
     COMPAS_D = "Compas Dataset"
@@ -62,7 +64,7 @@ class Tester:
         :return: Used testing X and y, along with all the predictions
         :rtype: pd.DataFrame, np.array, List[np.array]
         """
-        model = self._get_model(bias_mit)
+        model = self._get_model(bias_mit, other)
         self._data = self._get_dataset(dataset,data_preprocessing)
 
         if not sensitive_attr:
@@ -90,7 +92,7 @@ class Tester:
                 self._acc_evals(evals, i) #
                 self._preds.append(rep_preds)
 
-                if repetitions==1 or ("save_intermediate" in other and other["save_intermediate"]):
+                if repetitions==1 or (self.OPT_SAVE_INTERMID in other and other[self.OPT_SAVE_INTERMID]):
                     race_split = self._data.race_all_splits[i]
                     self.save_test_results(evals, dataset, bias_mit, ml_method, bias_ml_method, sensitive_attr, same_data_split, race_split)
 
@@ -147,13 +149,13 @@ class Tester:
         self._initd_data[dataset_description] = data
         return data
 
-    def _get_model(self, name) -> Model:
+    def _get_model(self, name, other) -> Model:
         if name == self.FAIRMASK:
-            return FairMaskModel()
+            return FairMaskModel(other)
         elif name == self.FAIRBALANCE:
-            return FairBalanceModel()
+            return FairBalanceModel(other)
         elif name == self.BASE_ML:
-            return BaseModel()
+            return BaseModel(other)
         else:
             raise RuntimeError("Incorrect method name ", name)
 
