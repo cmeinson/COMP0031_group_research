@@ -8,7 +8,7 @@ from sklearn.model_selection import train_test_split
 class CompasData(Data):
     # NB: if ur implementation of the class takes more than one file pls put it all into sub folder
     # does reading and cleaning go here or do we add extra functions for that?
-    def __init__(self, preprocessing=None, tests_ratio=0.2) -> None:
+    def __init__(self, preprocessing=None, test_ratio=0.2) -> None:
         """
         - reads the according dataset from the ata folder,
         - runs cleaning and preprocessing methods, chosen based on the preprocessing param
@@ -19,6 +19,7 @@ class CompasData(Data):
         :param tests_ratio: determines the proportion of test data, defaults to 0.2
         :type tests_ratio: float, optional
         """
+        self._test_ratio = test_ratio
         self.data = pd.read_csv('data/compas-scores-two-years.csv')
 
         # Do default preprocessing
@@ -33,9 +34,8 @@ class CompasData(Data):
             pass # Nothing special as of yet
 
         # Create train-test split
-        self._X_train, self._X_test, self._y_train, self._y_test = train_test_split(self._X, self._y,
-                                                                                    test_size=tests_ratio)
-
+        self.new_data_split()
+        
     def pre_processing(self):
         # preprocessing done according to preprocessing.ipynb
         self.data = self.data.drop(
