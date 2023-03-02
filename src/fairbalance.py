@@ -8,7 +8,6 @@ from sklearn.compose import make_column_selector as selector
 from sklearn.compose import ColumnTransformer
 
 class FairBalanceModel(Model):
-    LOGR = "LogisticRegression" 
 
     def __init__(self, other: Dict[str, Any] = {}) -> None:
         """Idk does not really do much yet I think:)
@@ -35,10 +34,10 @@ class FairBalanceModel(Model):
         :type other: Dict[str, Any], optional
         """
         self._model = self._get_model(method)
+        self.transformer = self._get_transformer(X)
         
-        self.encode_data(X)
         sample_weight = self.FairBalance(X, y, sensitive_attributes)
-        self._model.fit(self.processor.fit_transform(X), y, sample_weight)
+        self._model.fit(self.transformer.fit_transform(X), y, sample_weight)
 
 
     def predict(self, X: pd.DataFrame, other: Dict[str, Any] = {}) -> np.array:
@@ -52,7 +51,7 @@ class FairBalanceModel(Model):
         :return: predictions for each row of X
         :rtype: np.array
         """
-        return self._model.predict(self.processor.transform(X))
+        return self._model.predict(self.transformer.transform(X))
 
     def FairBalance(self, X, y, A):
         groups_class = {}
@@ -78,18 +77,6 @@ class FairBalanceModel(Model):
         sample_weight = sample_weight * len(y) / sum(sample_weight)
         return sample_weight
 
-    def encode_data(self, X):
-        numerical_columns_selector = selector(dtype_exclude=object)
-        categorical_columns_selector = selector(dtype_include=object)
-
-        numerical_columns = numerical_columns_selector(X)
-        categorical_columns = categorical_columns_selector(X)
-
-        categorical_processor = OneHotEncoder(handle_unknown = 'ignore')
-        numerical_processor = StandardScaler()
-        self.processor = ColumnTransformer([
-            ('OneHotEncoder', categorical_processor, categorical_columns),
-            ('StandardScaler', numerical_processor, numerical_columns)])
    
 
 

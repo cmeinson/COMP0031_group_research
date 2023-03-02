@@ -90,6 +90,20 @@ class Model:
         :rtype: np.array
         """
         raise NotImplementedError
+    
+    def _get_transformer(self, X):
+        numerical_columns_selector = selector(dtype_exclude=object)
+        categorical_columns_selector = selector(dtype_include=object)
+
+        numerical_columns = numerical_columns_selector(X)
+        categorical_columns = categorical_columns_selector(X)
+
+        categorical_processor = OneHotEncoder(handle_unknown = 'ignore')
+        numerical_processor = StandardScaler()
+        transformer = ColumnTransformer([
+            ('OneHotEncoder', categorical_processor, categorical_columns),
+            ('StandardScaler', numerical_processor, numerical_columns)])
+        return transformer
 
 
 class BaseModel(Model):
@@ -99,21 +113,9 @@ class BaseModel(Model):
 
     def train(self, X: pd.DataFrame, y: np.array, sensitive_atributes: List[str], method, method_bias = None, other: Dict[str, Any] = {}):
         self._model = self._get_model(method, other)  
-        self.encode_data(X)          
-        self._model.fit(self.processor.fit_transform(X), y)
+        self.transformer = self._get_transformer(X)        
+        self._model.fit(self.transformer.fit_transform(X), y)
 
     def predict(self, X: pd.DataFrame, other: Dict[str, Any] = {}) -> np.array:
-        return self._model.predict(self.processor.transform(X))
+        return self._model.predict(self.transformer.transform(X))
     
-    def encode_data(self, X):
-        numerical_columns_selector = selector(dtype_exclude=object)
-        categorical_columns_selector = selector(dtype_include=object)
-
-        numerical_columns = numerical_columns_selector(X)
-        categorical_columns = categorical_columns_selector(X)
-
-        categorical_processor = OneHotEncoder(handle_unknown = 'ignore')
-        numerical_processor = StandardScaler()
-        self.processor = ColumnTransformer([
-            ('OneHotEncoder', categorical_processor, categorical_columns),
-            ('StandardScaler', numerical_processor, numerical_columns)])
