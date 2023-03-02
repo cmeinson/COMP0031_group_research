@@ -12,6 +12,9 @@ from sklearn.tree import DecisionTreeRegressor,DecisionTreeClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.compose import make_column_selector as selector
+from sklearn.compose import ColumnTransformer
 
 class Model:
     # NB: if ur implementation of the class takes more than one file pls put it all into sub folder
@@ -87,16 +90,40 @@ class Model:
         :rtype: np.array
         """
         raise NotImplementedError
+    
+    def _get_transformer(self, X):
+        numerical_columns_selector = selector(dtype_exclude=object)
+        categorical_columns_selector = selector(dtype_include=object)
+
+        numerical_columns = numerical_columns_selector(X)
+        categorical_columns = categorical_columns_selector(X)
+
+        categorical_processor = OneHotEncoder(handle_unknown = 'ignore')
+        numerical_processor = StandardScaler()
+        transformer = ColumnTransformer([
+            ('OneHotEncoder', categorical_processor, categorical_columns),
+            ('StandardScaler', numerical_processor, numerical_columns)])
+        return transformer
 
 
 class BaseModel(Model):
+    OPT_FBALANCE = "Apply fairbalance column transform"
 
     def __init__(self, other: Dict[str, Any] = {}) -> None:
+        self._use_transformer = (self.OPT_FBALANCE in other) and (other[self.OPT_FBALANCE])    
         self._model = None
 
     def train(self, X: pd.DataFrame, y: np.array, sensitive_atributes: List[str], method, method_bias = None, other: Dict[str, Any] = {}):
-        self._model = self._get_model(method, other)            
-        self._model.fit(X, y)
+        self._model = self._get_model(method, other)  
+        self.transformer = self._get_transformer(X)   
+        if self._use_transformer:     
+            self._model.fit(self.transformer.fit_transform(X), y)
+        else:
+            self._model.fit(X, y)
 
     def predict(self, X: pd.DataFrame, other: Dict[str, Any] = {}) -> np.array:
-        return self._model.predict(X)
+        if self._use_transformer:  
+            return self._model.predict(self.transformer.transform(X))
+        else:
+            return self._model.predict(X)
+    
