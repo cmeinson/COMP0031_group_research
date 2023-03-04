@@ -80,8 +80,5 @@ class CompasData(Data):
     # def transform(self): # LATER
     #    # will probably rename later. but something for merging attributes into binary ones?
     #    raise NotImplementedError
-<<<<<<< HEAD
 
 # compas = CompasData()
-=======
->>>>>>> 092ee39f58a0ddd6e6967baa4e6b8cc8e142fd85
