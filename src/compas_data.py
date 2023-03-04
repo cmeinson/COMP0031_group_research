@@ -1,5 +1,5 @@
 from .data_interface import Data
-from typing import List, Tuple
+from typing import List
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
@@ -21,36 +21,22 @@ class CompasData(Data):
         """
         self.data = pd.read_csv('data/compas-scores-two-years.csv')
 
-        if preprocessing is None:
-            self.pre_processing()
+        # Do default preprocessing
+        self.pre_processing()
 
-        self._X = pd.DataFrame(self.data)
-        print(self._X)
-
+        self._X = pd.DataFrame(self.data, columns=["sex", "age_cat", "race", "priors_count", "c_charge_degree", "decile_score.1", "priors_count.1"])
         self._y = self.data['Probability'].to_numpy()
+
+        if preprocessing == "FairBalance":
+            self._preprocess_fairbalance(self._X)
+        elif preprocessing == "FairMask":
+            pass # Nothing special as of yet
 
         # Create train-test split
         self._X_train, self._X_test, self._y_train, self._y_test = train_test_split(self._X, self._y,
                                                                                     test_size=tests_ratio)
 
-    def get_train_data(self) -> Tuple[pd.DataFrame, np.array]:
-        """Returns the training data where
-        X: is the df with all attributes, with according column names
-        y: the outcome for each row (e.g. the default credit, is income above 50k, did reoffend?)
-        :return: training data (X, y)
-        :rtype: Tuple[pd.DataFrame, np.array]
-        """
-        return (self._X_train, self._y_train)
-
-    def get_test_data(self) -> Tuple[pd.DataFrame, np.array]:
-        """
-        :return: test data (X, y)
-        :rtype: Tuple[pd.DataFrame, np.array]
-        """
-        return (self._X_test, self._y_test)
-
-    def pre_processing(self):#
-
+    def pre_processing(self):
         # preprocessing done according to preprocessing.ipynb
         self.data = self.data.drop(
             ['id', 'name', 'first', 'last', 'compas_screening_date', 'dob', 'age', 'juv_fel_count', 'decile_score',
@@ -69,6 +55,7 @@ class CompasData(Data):
         self.data['age_cat'] = np.where(self.data['age_cat'] == 'Greater than 45', 45, self.data['age_cat'])
         self.data['age_cat'] = np.where(self.data['age_cat'] == '25 - 45', 25, self.data['age_cat'])
         self.data['age_cat'] = np.where(self.data['age_cat'] == 'Less than 25', 0, self.data['age_cat'])
+        self.data['c_charge_degree'] = np.where(self.data['c_charge_degree'] == 'F', 1, 0)
 
         self.data.rename(index=str, columns={"two_year_recid": "Probability"}, inplace=True)
         self.data['Probability'] = np.where(self.data['Probability'] == 0, 1, 0)
@@ -79,9 +66,11 @@ class CompasData(Data):
         :rtype: List[str]
         """
         # returns a list of names
-        return ['sex', 'age', 'race']
+        return ['sex', 'race'] # For now removed the age cause it eas not used in a ny papers so not relevant in replication ['sex', 'age_cat', 'race']
         # raise NotImplementedError
 
     # def transform(self): # LATER
     #    # will probably rename later. but something for merging attributes into binary ones?
     #    raise NotImplementedError
+
+# compas = CompasData()

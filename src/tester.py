@@ -1,7 +1,9 @@
 from os import path
 import pandas as pd
 from .data_interface import Data, DummyData
+from .adult_data import AdultData
 from .compas_data import CompasData
+from .adult_data import AdultData
 from .ml_interface import Model, BaseModel
 from .metrics import Metrics
 from typing import List, Dict, Any
@@ -40,6 +42,7 @@ class Tester:
         evals = self._evaluate(Metrics(X, y, preds), metric_names, sensitive_attr)
         self.save_test_results(evals, dataset, bias_mit, ml_method, bias_ml_method, sensitive_attr)
         return X, y, preds
+       
 
 
     def _evaluate(self, metrics: Metrics, metric_names: List[str], sensitive_attr):
@@ -61,11 +64,11 @@ class Tester:
 
         data = None
         if name == self.ADULT_D:
-            pass
+            data = AdultData(preprocessing)
         elif name == self.COMPAS_D:
             data = CompasData(preprocessing)
         elif name == self.DUMMY_D:
-            data = DummyData(preprocessing)  # default
+            data = DummyData(preprocessing)
         else:
             raise RuntimeError("Incorrect dataset name ", name)
 
@@ -78,7 +81,7 @@ class Tester:
         elif name == self.FAIRBALANCE:
             return FairBalanceModel()
         elif name == self.BASE_ML:
-            return BaseModel()  # default
+            return BaseModel()
         else:
             raise RuntimeError("Incorrect method name ", name)
 

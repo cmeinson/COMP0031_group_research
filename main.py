@@ -5,14 +5,13 @@ from src import *
 
 results_filename = "test"
 
-metric_names = [Metrics.ACC]
+metric_names = Metrics.get_attribute_dependant() + Metrics.get_attribute_independant() + Metrics.get_subgroup_dependant()
 
 # All the following constants are just strings so caould also easily be read from a file or whatever. just for convenience:
-dataset = Tester.DUMMY_D
-bias_mit = Tester.BASE_ML
-ml_method = BaseModel.SV
+dataset = Tester.COMPAS_D
+bias_mit = Tester.FAIRBALANCE
+ml_method = FairBalanceModel.LOGR
 
 tester = Tester(os.path.join("results",results_filename))
-X, y, preds = tester.run_test(metric_names, dataset, bias_mit, ml_method)
-print(X)
+X, y, preds = tester.run_test(metric_names, dataset, bias_mit, ml_method, sensitive_attr=["sex","race"])
 print(y, preds)

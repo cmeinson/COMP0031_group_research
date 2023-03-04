@@ -1,6 +1,9 @@
 import numpy as np
 import pandas as pd
 from typing import List
+import warnings
+from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
+from aif360.sklearn.metrics import statistical_parity_difference, equal_opportunity_difference, average_odds_difference, disparate_impact_ratio, df_bias_amplification
 
 # how do we wanna do metrics?
 
@@ -15,13 +18,14 @@ class Metrics:
     F1 = "f1score"
 
     #fairness metrics
-    AOD = "aod"
-    EOD = "eod"
-    SPD = "spd"
-    DI = "di"
-    FR = "fr"
+    AOD = "[AOD] Average Odds Difference"
+    EOD = "[EOD] Equal Opportunity Difference"
+    SPD = "[SPD] Statistical Parity Difference"
+    DI = "[DI] Disparate Impact "
     SF = "[SF] Statistical Parity Subgroup Fairness"
     DF = "[DF] Differential Fairness"
+
+    warnings.simplefilter("ignore")
 
     def __init__(self, X: pd.DataFrame, y: np.array, preds: np.array) -> None:
         # might need more attributes idk
@@ -32,15 +36,15 @@ class Metrics:
 
     def get_subgroup_dependant():
         # metrics that need a list of attributes as input to create subgroups
-        return [Metrics.SF, Metrics.DF]
+        return [Metrics.DF]
 
     def get_attribute_dependant():
         # metrics that need a single attribute as input
         return [Metrics.AOD, Metrics.EOD, Metrics.SPD]
 
     def get_attribute_independant():
-        # mterics independant of attributes
-        return [Metrics.ACC, Metrics.PRE, Metrics.REC, Metrics.F1]
+        # metrics independant of attributes
+        return [Metrics.ACC, Metrics.PRE, Metrics.REC, Metrics.F1, Metrics.DI]
 
     def get(self, metric_name, attr: str or List[str] = None):
         if metric_name == self.ACC:
@@ -52,127 +56,87 @@ class Metrics:
         elif metric_name == self.F1:
             return self.f1score()
         elif metric_name == self.AOD:
-            return self.aod()
+            return self.aod(attr)
         elif metric_name == self.EOD:
-            return self.eod()
+            return self.eod(attr)
         elif metric_name == self.SPD:
-            return self.spd()
-        #elif metric_name == self.DI:
-            #return self.di()
-        #elif metric_name == self.FR:
-            #return self.fr()
+            return self.spd(attr)
+        elif metric_name == self.DI:
+            return self.di()
+         #elif metric_name == self.SF:
+            #return self.sf(attr)
+        elif metric_name == self.DF:
+            return self.df(attr)
         else:
             raise RuntimeError("Invalid metric name: ", metric_name)
     
     def accuracy(self) -> float:
-        return np.mean(self._y == self._preds)
+        return accuracy_score(self._y, self._preds)
+        #return np.mean(self._y == self._preds)
 
     # etc other metrics
 
     def precision(self) -> float:
-        target1 = np.mean(self._y)[1] <= np.mean(self._y)[0]
-        conf = self.conf()
-        if target1:
-            prec = conf['tp'] / (conf['tp'] + conf['fp'])
-        else:
-            prec = conf['tn'] / (conf['tn'] + conf['fn'])
-        return prec
+        return precision_score(self._y, self._preds)
 
     def recall(self) -> float:
-        target1 = np.mean(self.y)[1] <= np.mean(self.y)[0]
-        conf = self.conf()
-        if target1:
-            tpr = conf['tp'] / (conf['tp'] + conf['fn'])
-        else:
-            tpr = conf['tn'] / (conf['tn'] + conf['fp'])
-        return tpr
-
+        return recall_score(self._y, self._preds)
+    
     def f1score(self) -> float:
-        prec = self.precision()
-        tpr = self.recall()
-        f1 = 2*tpr*prec/(tpr+prec)
-        return f1
+        return f1_score(self._y, self._preds)
 
-    def aod(self, a=None) -> float:
-        if a is not None:
-            ind0 = np.where(self.X[a] == 0)[0]
-            ind1 = np.where(self.X[a] == 1)[0]
-            conf0 = self.conf(ind0)
-            conf1 = self.conf(ind1)
-            tpr0 = conf0['tp'] / (conf0['tp'] + conf0['fn'])
-            tpr1 = conf1['tp'] / (conf1['tp'] + conf1['fn'])
-            fpr0 = conf0['fp'] / (conf0['fp'] + conf0['tn'])
-            fpr1 = conf1['fp'] / (conf1['fp'] + conf1['tn'])
-            return 0.5 * (tpr1 + fpr1 - tpr0 - fpr0)
-        else:
-            aos = self.aos()
-            return max(aos.values()) - min(aos.values())
+    def aod(self, attr) -> float:
+        return np.mean(average_odds_difference(pd.Series(self._y), self._preds))
 
-    def eod(self, a=None) -> float:
-        if a is not None:
-            ind0 = np.where(self.X[a] == 0)[0]
-            ind1 = np.where(self.X[a] == 1)[0]
-            conf0 = self.conf(ind0)
-            conf1 = self.conf(ind1)
-            tpr0 = conf0['tp'] / (conf0['tp'] + conf0['fn'])
-            tpr1 = conf1['tp'] / (conf1['tp'] + conf1['fn'])
-            return tpr1 - tpr0
-        else:
-            tprs = self.prs("t")
-            return max(tprs.values())-min(tprs.values())
+    def eod(self, attr) -> float:
+        return np.mean(equal_opportunity_difference(pd.Series(self._y), self._preds))
 
-    def spd(self, a=None) -> float:
-        if a is not None:
-            ind0 = np.where(self.X[a] == 0)[0]
-            ind1 = np.where(self.X[a] == 1)[0]
-            conf0 = self.conf(ind0)
-            conf1 = self.conf(ind1)
-            pr0 = (conf0['tp']+conf0['fp']) / len(ind0)
-            pr1 = (conf1['tp']+conf1['fp']) / len(ind1)
-            return pr1 - pr0
-        else:
-            prs = self.prs("n")
-            return max(prs.values())-min(prs.values())
+    def spd(self, attr) -> float:
+        return np.mean(statistical_parity_difference(pd.Series(self._y)))
 
-
-    #def di(self) -> float:
-
-    #def fr(self) -> float:
-
-    def conf(self, sub=None):
-        if sub is None:
-            sub = range(len(self._y))
-        y = self._y[sub]
-        y_pred = self.y_pred[sub]
-        conf = {'tp':0, 'tn':0, 'fp':0, 'fn':0}
-        for i in range(len(y)):
-            if y[i]==0 and y_pred[i]==0:
-                conf['tn']+=1
-            elif y[i]==1 and y_pred[i]==1:
-                conf['tp'] += 1
-            elif y[i]==0 and y_pred[i]==1:
-                conf['fp'] += 1
-            elif y[i]==1 and y_pred[i]==0:
-                conf['fn'] += 1
-        return conf
+    def di(self) -> float:
+        return np.mean(disparate_impact_ratio(pd.Series(self._y)))
     
-    def aos(self):
-        tprs = self.prs("t")
-        fprs = self.prs("f")
-        for key in tprs:
-            aos = {key: (tprs[key]+fprs[key])/2}
-        return aos
+    def df(self, attr) -> float:
+        return np.mean(disparate_impact_ratio(pd.Series(self._y), self._preds))
     
-    def prs(self, type):
-        prs = {}
-        for group in self.groups:
-            sub = self.groups[group]
-            conf = self.conf(sub)
-            if type == "t":
-                pr = conf['tp'] / (conf['tp'] + conf['fn'])
-            elif type == "f":
-                pr = conf['fp'] / (conf['fp'] + conf['tn'])
-            else:
-                pr = (conf['tp'] + conf['fp']) / len(sub)
-            prs[group] = pr
-        return prs
+    #def sf(self, attr) -> float:
+    
+
+
+
+
+    
+    """""
+    #df taken from https://arxiv.org/pdf/1807.08362.pdf
+    
+    def df(self, attr) -> float:
+        noOfClasses = 2
+        concParam = 1.0
+        dirichletAlpha = concParam/noOfClasses
+        intersectGroups = np.unique(attr,axis=0)
+        countsClassOne = np.zeros((len(intersectGroups)))
+        countsTotal = np.zeros((len(intersectGroups)))
+        for i in range(len(self._preds)):
+            index=np.where((intersectGroups==attr[0]).all(axis=0))[0][0]
+            countsTotal[index] += 1
+            if self._preds[i] == 1:
+                countsClassOne[index] += 1
+        probabilitiesForDFSmoothed = (countsClassOne + dirichletAlpha) /(countsTotal + concParam)
+        epsilonSmoothed = self.differentialFairnessBinaryOutcome(probabilitiesForDFSmoothed)
+        return epsilonSmoothed
+    
+    def differentialFairnessBinaryOutcome(self, probabilitiesOfPositive):
+        epsilonPerGroup = np.zeros(len(probabilitiesOfPositive))
+        for i in  range(len(probabilitiesOfPositive)):
+            epsilon = 0.0
+            for j in range(len(probabilitiesOfPositive)):
+                if i == j:
+                    continue
+                else:
+                    epsilon = max(epsilon,abs(np.log(probabilitiesOfPositive[i])-np.log(probabilitiesOfPositive[j])))
+                    epsilon = max(epsilon,abs(np.log((1-probabilitiesOfPositive[i]))-np.log((1-probabilitiesOfPositive[j]))))
+            epsilonPerGroup[i] = epsilon
+        epsilon = max(epsilonPerGroup)
+        return epsilon
+    """

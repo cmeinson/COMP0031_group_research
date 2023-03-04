@@ -2,6 +2,9 @@ from typing import List, Tuple
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.compose import make_column_selector as selector
+from sklearn.compose import ColumnTransformer
 
 class Data:
     # NB: if ur implementation of the class takes more than one file pls put it all into sub folder
@@ -23,18 +26,19 @@ class Data:
         """Returns the training data where
         X: is the df with all attriutes, with accordig column names
         y: the outcome for each row (e.g. the default credit, is income above 50k, did reoffend?)
+        Duplicares everything for safety reasons:)
 
         :return: training data (X, y)
         :rtype: Tuple[pd.DataFrame, np.array]
         """
-        raise NotImplementedError
+        return (self._X_train.copy(), self._y_train.copy())
 
     def get_test_data(self) -> Tuple[pd.DataFrame, np.array]:
         """
         :return: test data (X, y)
         :rtype: Tuple[pd.DataFrame, np.array]
         """
-        raise NotImplementedError
+        return (self._X_test.copy(), self._y_test.copy())
 
     def get_sensitive_column_names(self) -> List[str]:
         """
@@ -42,6 +46,19 @@ class Data:
         :rtype: List[str]
         """
         raise NotImplementedError
+    
+    def _preprocess_fairbalance(self, X):
+        numerical_columns_selector = selector(dtype_exclude=object)
+        categorical_columns_selector = selector(dtype_include=object)
+
+        numerical_columns = numerical_columns_selector(X)
+        categorical_columns = categorical_columns_selector(X)
+
+        categorical_processor = OneHotEncoder(handle_unknown = 'ignore')
+        numerical_processor = StandardScaler()
+        self.processor = ColumnTransformer([
+            ('OneHotEncoder', categorical_processor, categorical_columns),
+            ('StandardScaler', numerical_processor, numerical_columns)])
 
 class DummyData(Data):
     def __init__(self, preprocessing = None, test_ratio=0.2) -> None:
@@ -50,12 +67,6 @@ class DummyData(Data):
         self._y = np.array([0, 1, 1, 0, 1, 1])
         self._X_train, self._X_test, self._y_train, self._y_test = train_test_split(self._X, self._y,
                                                                                     test_size=test_ratio)
-
-    def get_train_data(self) -> Tuple[pd.DataFrame, np.array]:
-        return (self._X_train, self._y_train)
-
-    def get_test_data(self) -> Tuple[pd.DataFrame, np.array]:
-        return (self._X_test, self._y_test)
 
     def get_sensitive_column_names(self) -> List[str]:
         return ["sensitive"]
