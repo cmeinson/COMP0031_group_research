@@ -3,12 +3,11 @@ from typing import List, Dict, Any
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import LogisticRegression
-from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.compose import make_column_selector as selector
-from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.compose import ColumnTransformer
 
 class FairBalanceModel(Model):
-    LOGR = "LogisticRegression" 
 
     def __init__(self, other: Dict[str, Any] = {}) -> None:
         """Idk does not really do much yet I think:)
@@ -34,14 +33,11 @@ class FairBalanceModel(Model):
         :param other: dictionary of any other params that we might wish to pass?, defaults to {}
         :type other: Dict[str, Any], optional
         """
-
-        if method == self.LOGR:
-            self._model = LogisticRegression(max_iter=100000)
-        else:
-            raise RuntimeError("Invalid ml method name: ", method)
+        self._model = self._get_model(method)
+        self.transformer = self._get_transformer(X)
         
         sample_weight = self.FairBalance(X, y, sensitive_attributes)
-        self._model.fit(X, y, sample_weight)
+        self._model.fit(self.transformer.fit_transform(X), y, sample_weight)
 
 
     def predict(self, X: pd.DataFrame, other: Dict[str, Any] = {}) -> np.array:
@@ -55,7 +51,7 @@ class FairBalanceModel(Model):
         :return: predictions for each row of X
         :rtype: np.array
         """
-        return self._model.predict(X)
+        return self._model.predict(self.transformer.transform(X))
 
     def FairBalance(self, X, y, A):
         groups_class = {}
@@ -80,6 +76,8 @@ class FairBalanceModel(Model):
         # Rescale the total weights to len(y)
         sample_weight = sample_weight * len(y) / sum(sample_weight)
         return sample_weight
+
+   
 
 
 

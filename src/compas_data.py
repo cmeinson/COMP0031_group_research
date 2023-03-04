@@ -8,7 +8,7 @@ from sklearn.model_selection import train_test_split
 class CompasData(Data):
     # NB: if ur implementation of the class takes more than one file pls put it all into sub folder
     # does reading and cleaning go here or do we add extra functions for that?
-    def __init__(self, preprocessing=None, tests_ratio=0.2) -> None:
+    def __init__(self, preprocessing=None, test_ratio=0.2) -> None:
         """
         - reads the according dataset from the ata folder,
         - runs cleaning and preprocessing methods, chosen based on the preprocessing param
@@ -19,29 +19,37 @@ class CompasData(Data):
         :param tests_ratio: determines the proportion of test data, defaults to 0.2
         :type tests_ratio: float, optional
         """
+        self._test_ratio = test_ratio
         self.data = pd.read_csv('data/compas-scores-two-years.csv')
 
         # Do default preprocessing
         self.pre_processing()
 
-        self._X = pd.DataFrame(self.data, columns=["sex", "age_cat", "race", "priors_count", "c_charge_degree", "decile_score.1", "priors_count.1"])
+        self._X = pd.DataFrame(self.data)
         self._y = self.data['Probability'].to_numpy()
 
         if preprocessing == "FairBalance":
-            self._preprocess_fairbalance(self._X)
-        elif preprocessing == "FairMask":
-            pass # Nothing special as of yet
+            self._X = self.fairbalance_columns(self._X)
+        else:
+            self._X = self.fairmask_columns(self._X)
 
         # Create train-test split
-        self._X_train, self._X_test, self._y_train, self._y_test = train_test_split(self._X, self._y,
-                                                                                    test_size=tests_ratio)
+        self.new_data_split()                                                                                 
 
+    def fairbalance_columns(self, X):
+        return X[['sex', 'age', 'age_cat', 'race',
+                  'juv_fel_count', 'juv_misd_count', 'juv_other_count',
+                  'priors_count', 'c_charge_degree', 'c_charge_desc']]
+    
+    def fairmask_columns(self, X):
+        return X[["sex", "age_cat", "race", "priors_count", "c_charge_degree", "decile_score.1", "priors_count.1"]]
+    
     def pre_processing(self):
         # preprocessing done according to preprocessing.ipynb
         self.data = self.data.drop(
-            ['id', 'name', 'first', 'last', 'compas_screening_date', 'dob', 'age', 'juv_fel_count', 'decile_score',
-             'juv_misd_count', 'juv_other_count', 'days_b_screening_arrest', 'c_jail_in', 'c_jail_out', 'c_case_number',
-             'c_offense_date', 'c_arrest_date', 'c_days_from_compas', 'c_charge_desc', 'is_recid', 'r_case_number',
+            ['id', 'name', 'first', 'last', 'compas_screening_date', 'dob', 'decile_score',
+             'days_b_screening_arrest', 'c_jail_in', 'c_jail_out', 'c_case_number',
+             'c_offense_date', 'c_arrest_date', 'c_days_from_compas', 'is_recid', 'r_case_number',
              'r_charge_degree', 'r_days_from_arrest', 'r_offense_date', 'r_charge_desc', 'r_jail_in', 'r_jail_out',
              'violent_recid', 'is_violent_recid', 'vr_case_number', 'vr_charge_degree', 'vr_offense_date',
              'vr_charge_desc', 'type_of_assessment', 'decile_score', 'score_text', 'screening_date',
@@ -72,5 +80,8 @@ class CompasData(Data):
     # def transform(self): # LATER
     #    # will probably rename later. but something for merging attributes into binary ones?
     #    raise NotImplementedError
+<<<<<<< HEAD
 
 # compas = CompasData()
+=======
+>>>>>>> 092ee39f58a0ddd6e6967baa4e6b8cc8e142fd85

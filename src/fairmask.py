@@ -2,18 +2,10 @@ from .ml_interface import Model
 import pandas as pd
 import numpy as np
 from typing import List, Dict, Any
-from sklearn.linear_model import LogisticRegression
-from sklearn.tree import DecisionTreeRegressor,DecisionTreeClassifier
-from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.linear_model import LinearRegression
+
 
 
 class FairMaskModel(Model):
-    RF = "RandomForestClassifier"
-    DT = "DecisionTreeRegressor"
-    LOG = "LogisticRegression-NOT IMPLEMENTED"
-
     def __init__(self, other: Dict[str, Any] = {}) -> None:
         """Idk does not really do much yet I think:)
 
@@ -45,23 +37,21 @@ class FairMaskModel(Model):
         self._mask_models = {}
         self._sensitive = sensitive_attributes
 
-        X_non_sens = X.copy()
-        print(X_non_sens)
-        X_non_sens.drop(self._sensitive, axis=1)
+        X_non_sens = X.copy().drop(columns=self._sensitive)
 
         # Build the mask_model for predicting each protected attribute
         for attr in sensitive_attributes: # ngl this code very sketchy but whatever will just copy what they did for now 
             mask_model = self._get_model(method_bias)
 
-            if method_bias == self.DT or method_bias == self.LOG:
+            if not self._is_regression(method_bias): # if a classifier
                 mask_model.fit(X_non_sens, X[attr])
-            else:
+            else: # if regression
                 clf = self._get_model(method)
                 clf.fit(X_non_sens, X[attr])
                 y_proba = clf.predict_proba(X_non_sens)
                 y_proba = [each[1] for each in y_proba]
                 mask_model.fit(X_non_sens, y_proba)
-            self._mask_models[attr] =mask_model 
+            self._mask_models[attr] = mask_model 
         # mask the attributes
         X_masked = self._mask(X)
 
@@ -83,28 +73,20 @@ class FairMaskModel(Model):
         """
         X_masked = self._mask(X)
         return self._model.predict(X_masked)
-
-    def _get_model(self, method):
-        if method == self.RF:
-            return RandomForestClassifier()
-        elif method == self.DT:
-            return DecisionTreeRegressor()
-        else:
-            raise RuntimeError("Invalid ml method name: ", method)
         
     def _mask(self, X: pd.DataFrame):
         threshold = 0.5
 
         X_out = X.copy()
-        X_non_sens = X.copy()
-        X_non_sens.drop(self._sensitive, axis=1)
+        X_non_sens = X.copy().drop(columns=self._sensitive)
 
         for attr in self._sensitive: 
             mask_model = self._mask_models[attr]
             mask = mask_model.predict(X_non_sens)
-            if self._method_bias == self.DT or self._method_bias == self.LOG:
+            if not self._is_regression(self._method_bias): # if a classifier
                 mask = np.where(mask >= threshold, 1, 0) # substitute to the reg2clf function
             X_out.loc[:, attr] = mask
+    
         return X_out
 
 
