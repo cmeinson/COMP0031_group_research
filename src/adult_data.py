@@ -1,5 +1,5 @@
 from .data_interface import Data
-from typing import List
+from typing import List, Tuple
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
@@ -12,7 +12,8 @@ FairMask Adult Data columns: age, education-num, race, sex, capital-gain, capita
 """
 
 class AdultData(Data):
-    # NB: if ur implementation of the class takes more than one file pls put it all into sub folder
+    race_pos_label = "White"
+    race_all_splits = ["White", "Black", 'Asian-Pac-Islander', 'Amer-Indian-Eskimo', 'Other']
 
     def __init__(self, preprocessing:str = None, test_ratio = 0.2) -> None:
         """
@@ -25,14 +26,15 @@ class AdultData(Data):
         :type tests_ratio: float, optional
         """
         self._test_ratio = test_ratio
-        self.dataset_orig = pd.read_csv('data/adult.csv')
+        self.data = pd.read_csv('data/adult.csv')
+        print(set(self.data["race"]))
 
         # Do default pre-processing from Preprocessing.ipynb
         self.pre_processing()
 
         # Split into input and output
-        self._X = pd.DataFrame(self.dataset_orig)
-        self._y = self.dataset_orig['Probability'].to_numpy()
+        self._X = pd.DataFrame(self.data)
+        self._y = self.data['Probability'].to_numpy()
         
         if preprocessing == "FairBalance":
             self._X = self.fairbalance_columns(self._X)
@@ -42,23 +44,41 @@ class AdultData(Data):
         # Create train-test split
         self.new_data_split()
 
+    def new_data_split(self) -> None:
+        """Changes the data split"""
+        self._X_train, self._X_test_cat, self._y_train, self._y_test = train_test_split(self._X, self._y,
+                                                                                    test_size=self._test_ratio)
+        self._X_test = self.copy_with_bin_race(self._X_test_cat, self.race_pos_label)
+        self._X_train = self.copy_with_bin_race(self._X_train, self.race_pos_label)
+
+    def get_all_test_data(self) -> List[Tuple[pd.DataFrame, np.array]]:
+        out = []
+        for l in self.race_all_splits:
+            out.append((self.copy_with_bin_race(self._X_test_cat, l), self._y_test.copy()))
+        return out
+
+    def copy_with_bin_race(self, X, pos_label):
+        X_new = X.copy()
+        X_new['race'] = np.where(X_new['race'] != pos_label, 0, 1)
+        return X_new
+
     def pre_processing(self):
-        self.dataset_orig = self.dataset_orig.dropna()
+        self.data = self.data.dropna()
 
         # Binarize sex, race and income (probability)
-        self.dataset_orig['sex'] = np.where(self.dataset_orig['sex'] == 'Male', 1, 0)
-        self.dataset_orig['race'] = np.where(self.dataset_orig['race'] != 'White', 0, 1)
-        self.dataset_orig['Probability'] = np.where(self.dataset_orig['Probability'] == '<=50K', 0, 1)
+        self.data['sex'] = np.where(self.data['sex'] == 'Male', 1, 0)
+        #self.dataset_orig['race'] = np.where(self.dataset_orig['race'] != 'White', 0, 1)
+        self.data['Probability'] = np.where(self.data['Probability'] == '<=50K', 0, 1)
 
         # Discretize age
-        self.dataset_orig['age'] = np.where(self.dataset_orig['age'] >= 70, 70, self.dataset_orig['age'])
-        self.dataset_orig['age'] = np.where((self.dataset_orig['age'] >= 60 ) & (self.dataset_orig['age'] < 70), 60, self.dataset_orig['age'])
-        self.dataset_orig['age'] = np.where((self.dataset_orig['age'] >= 50 ) & (self.dataset_orig['age'] < 60), 50, self.dataset_orig['age'])
-        self.dataset_orig['age'] = np.where((self.dataset_orig['age'] >= 40 ) & (self.dataset_orig['age'] < 50), 40, self.dataset_orig['age'])
-        self.dataset_orig['age'] = np.where((self.dataset_orig['age'] >= 30 ) & (self.dataset_orig['age'] < 40), 30, self.dataset_orig['age'])
-        self.dataset_orig['age'] = np.where((self.dataset_orig['age'] >= 20 ) & (self.dataset_orig['age'] < 30), 20, self.dataset_orig['age'])
-        self.dataset_orig['age'] = np.where((self.dataset_orig['age'] >= 10 ) & (self.dataset_orig['age'] < 10), 10, self.dataset_orig['age'])
-        self.dataset_orig['age'] = np.where(self.dataset_orig['age'] < 10, 0, self.dataset_orig['age'])
+        self.data['age'] = np.where(self.data['age'] >= 70, 70, self.data['age'])
+        self.data['age'] = np.where((self.data['age'] >= 60 ) & (self.data['age'] < 70), 60, self.data['age'])
+        self.data['age'] = np.where((self.data['age'] >= 50 ) & (self.data['age'] < 60), 50, self.data['age'])
+        self.data['age'] = np.where((self.data['age'] >= 40 ) & (self.data['age'] < 50), 40, self.data['age'])
+        self.data['age'] = np.where((self.data['age'] >= 30 ) & (self.data['age'] < 40), 30, self.data['age'])
+        self.data['age'] = np.where((self.data['age'] >= 20 ) & (self.data['age'] < 30), 20, self.data['age'])
+        self.data['age'] = np.where((self.data['age'] >= 10 ) & (self.data['age'] < 10), 10, self.data['age'])
+        self.data['age'] = np.where(self.data['age'] < 10, 0, self.data['age'])
 
     def fairmask_columns(self, X):
         return X.drop(['workclass', 'fnlwgt', 'education', 'marital-status', 'occupation', 'relationship', 'native-country', 'Probability'], axis=1)

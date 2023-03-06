@@ -4,16 +4,16 @@ from src import *
 # Just an example for now
 
 
-n_repetitions = 10
+n_repetitions = 20
 same_data_split = False
-results_filename = "heheh"
+results_filename = "alltesttest"
 other = {Tester.OPT_SAVE_INTERMID: False}
 
 other_fb = other.copy()
 other_fb[BaseModel.OPT_FBALANCE] = True
 
 
-datasets =  [Tester.COMPAS_D]
+datasets =  [Tester.COMPAS_D, Tester.ADULT_D]
 mls = [(Tester.BASE_ML, Model.LG_R, None, "FairBalance", other_fb), 
        (Tester.FAIRBALANCE, Model.LG_R, None, "FairBalance", other_fb), 
 
