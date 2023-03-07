@@ -10,7 +10,7 @@ from sklearn.naive_bayes import GaussianNB
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeRegressor,DecisionTreeClassifier
 from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
 
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.compose import make_column_selector as selector
@@ -26,6 +26,7 @@ class Model:
     SV_C = "SupportVectorClassifier"
     NN_C = "MLPClassifier"
     NB_C = "NaiveBayes"
+    AB_C = "AdaBoostClassifier"
 
     def __init__(self, other: Dict[str, Any] = {}) -> None:
         """Idk does not really do much yet I think:)
@@ -54,6 +55,8 @@ class Model:
             return DecisionTreeRegressor()
         elif method == self.LG_R:
             return LogisticRegression(max_iter=100000)
+        elif method == self.AB_C:
+            return AdaBoostClassifier()
         else:
             raise RuntimeError("Invalid ml method name: ", method)
         
