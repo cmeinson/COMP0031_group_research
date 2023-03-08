@@ -52,12 +52,10 @@ class FairMaskModel(Model):
                 y_proba = [each[1] for each in y_proba]
                 mask_model.fit(X_non_sens, y_proba)
             self._mask_models[attr] = mask_model 
-        # mask the attributes
-        X_masked = self._mask(X)
-
+            
         # Build the model for the actual prediction
         self._model = self._get_model(method)
-        self._model.fit(X_masked, y)
+        self._model.fit(X, y)
              
 
     def predict(self, X: pd.DataFrame, other: Dict[str, Any] = {}) -> np.array:
