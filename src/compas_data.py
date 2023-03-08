@@ -1,13 +1,14 @@
+from sklearn.model_selection import train_test_split
 from .data_interface import Data
-from typing import List
+from typing import List, Tuple
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import train_test_split
 
 
 class CompasData(Data):
-    # NB: if ur implementation of the class takes more than one file pls put it all into sub folder
-    # does reading and cleaning go here or do we add extra functions for that?
+    race_pos_label = "Caucasian"
+    race_all_splits = ["Caucasian", "African-American", "Other", "Hispanic"]
+   
     def __init__(self, preprocessing=None, test_ratio=0.2) -> None:
         """
         - reads the according dataset from the ata folder,
@@ -43,7 +44,25 @@ class CompasData(Data):
     
     def fairmask_columns(self, X):
         return X[["sex", "age_cat", "race", "priors_count", "c_charge_degree", "decile_score.1", "priors_count.1"]]
-    
+
+    def new_data_split(self) -> None:
+        """Changes the data split"""
+        self._X_train, self._X_test_cat, self._y_train, self._y_test = train_test_split(self._X, self._y,
+                                                                                    test_size=self._test_ratio)
+        self._X_test = self.copy_with_bin_race(self._X_test_cat, self.race_pos_label)
+        self._X_train = self.copy_with_bin_race(self._X_train, self.race_pos_label)
+
+    def get_all_test_data(self) -> List[Tuple[pd.DataFrame, np.array]]:
+        out = []
+        for l in self.race_all_splits:
+            out.append((self.copy_with_bin_race(self._X_test_cat, l), self._y_test.copy()))
+        return out
+
+    def copy_with_bin_race(self, X, pos_label):
+        X_new = X.copy()
+        X_new['race'] = np.where(X_new['race'] != pos_label, 0, 1)
+        return X_new
+
     def pre_processing(self):
         # preprocessing done according to preprocessing.ipynb
         self.data = self.data.drop(
@@ -57,8 +76,7 @@ class CompasData(Data):
              'start', 'end', 'event'], axis=1)
 
         self.data = self.data.dropna()
-
-        self.data['race'] = np.where(self.data['race'] != 'Caucasian', 0, 1)
+        #self.data['race'] = np.where(self.data['race'] != self.race_pos_label, 0, 1)
         self.data['sex'] = np.where(self.data['sex'] == 'Female', 0, 1)
         self.data['age_cat'] = np.where(self.data['age_cat'] == 'Greater than 45', 45, self.data['age_cat'])
         self.data['age_cat'] = np.where(self.data['age_cat'] == '25 - 45', 25, self.data['age_cat'])
