@@ -26,8 +26,11 @@ class Metrics:
     DI = "[DI] Disparate Impact"
     FR = "[FR] Flip Rate"
 
-    #SF = "[SF] Statistical Parity Subgroup Fairness"
-    #DF = "[DF] Differential Fairness"
+    SF = "[SF] Statistical Parity Subgroup Fairness"
+    ONE_SF = "[SF] Statistical Parity Subgroup Fairness for One Attribute"
+
+    DF = "[DF] Differential Fairness"
+    ONE_DF = "[DF] Differential Fairness for One Attribute"
 
     M_EOD = "[MEOD] M Equal Opportunity Difference"
     M_AOD = "[MEOD] M Average Odds Difference"
@@ -49,12 +52,11 @@ class Metrics:
 
     def get_subgroup_dependant():
         # metrics that need a list of attributes as input to create subgroups
-        #return [Metrics.SF, Metrics.DF, Metrics.M_EOD, Metrics.M_AOD]
-        return [Metrics.M_EOD, Metrics.M_AOD]
+        return [Metrics.SF, Metrics.DF, Metrics.M_EOD, Metrics.M_AOD]
 
     def get_attribute_dependant():
         # metrics that need a single attribute as input
-        return [Metrics.AOD, Metrics.EOD, Metrics.SPD, Metrics.DI, Metrics.FR]
+        return [Metrics.AOD, Metrics.EOD, Metrics.SPD, Metrics.DI, Metrics.FR, Metrics.ONE_SF, Metrics.ONE_DF]
 
     def get_attribute_independant():
         # metrics independant of attributes
@@ -77,10 +79,14 @@ class Metrics:
             return self.spd(attr)
         elif metric_name == self.DI:
             return self.di(attr)
-         #elif metric_name == self.SF:
-            #return self.sf(attr), attr
-        #elif metric_name == self.DF:
-        #    return self.df(attr), attr
+        elif metric_name == self.SF:
+            return self.sf(attr)
+        elif metric_name == self.ONE_SF:
+            return self.oneSF(attr)
+        elif metric_name == self.DF:
+            return self.df(attr)
+        elif metric_name == self.ONE_DF:
+            return self.oneDF(attr)
         elif metric_name == self.M_EOD:
             return self.meod(attr)
         elif metric_name == self.M_AOD:
@@ -170,11 +176,76 @@ class Metrics:
         total = self._X.shape[0]
         same = np.count_nonzero(self._preds==preds_flip)
         return self._round((total-same)/total)
+    
+    # df taken from https://github.com/rashid-islam/Differential_Fairness/blob/1e90232fdb688a538bb534319ff3c9a7e0dee576/differential_fairness.py
+    
+    def df(self, attributes) -> float:
+        intersectGroups = np.unique(attributes,axis=0)
+        countsClassOne = np.zeros((len(intersectGroups)))
+        countsTotal = np.zeros((len(intersectGroups)))
+        for i in range(len(self._preds)):
+            index=np.where((sorted(intersectGroups)==sorted(attributes)))[0]
+            countsTotal[index] += 1
+            if self._preds[i] == 1:
+                countsClassOne[index] += 1
+        probabilitiesForDFSmoothed = (countsClassOne + 0.5) /(countsTotal + 1.0)
+        epsilonSmoothed = self.dfBinary(probabilitiesForDFSmoothed)
+        return self._round(epsilonSmoothed)
+    
+    def oneDF(self, attributes) -> float:
+        intersectGroups = np.unique(attributes)
+        countsClassOne = np.zeros((len(intersectGroups)))
+        countsTotal = np.zeros((len(intersectGroups)))
+        for i in range(len(self._preds)):
+            index=np.where((intersectGroups == [attributes]))[0]
+            countsTotal[index] += 1
+            if self._preds[i] == 1:
+                countsClassOne[index] += 1
+        probabilitiesForDFSmoothed = (countsClassOne + 0.5) /(countsTotal + 1.0)
+        epsilonSmoothed = self.dfOneBinary(probabilitiesForDFSmoothed)
+        return self._round(epsilonSmoothed)
+    
+    def dfBinary(self, probabilitiesOfPositive):
+        epsilonPerGroup = np.zeros(len(probabilitiesOfPositive))
+        for i in range(len(probabilitiesOfPositive)):
+            epsilon = 0.0
+            for j in range(len(probabilitiesOfPositive)):
+                if i == j:
+                    continue
+                else:
+                    epsilon = max(epsilon,abs(np.log(probabilitiesOfPositive[i])-np.log(probabilitiesOfPositive[j])))
+                    epsilon = max(epsilon,abs(np.log((1-probabilitiesOfPositive[i]))-np.log((1-probabilitiesOfPositive[j]))))
+            epsilonPerGroup[i] = epsilon
+        epsilon = max(epsilonPerGroup)
+        return epsilon
+    
+    def dfOneBinary(self, probabilitiesOfPositive):
+        epsilonPerGroup = np.zeros(len(probabilitiesOfPositive))
+        for i in range(len(probabilitiesOfPositive)):
+            epsilon = 0.0
+            epsilon = max(epsilon,abs(np.log(probabilitiesOfPositive[i])))
+            epsilon = max(epsilon,abs(np.log((1-probabilitiesOfPositive[i]))))
+            epsilonPerGroup[i] = epsilon
+        epsilon = max(epsilonPerGroup)
+        return epsilon
 
-    #def df(self, attr) -> float:
-        #return np.mean(disparate_impact_ratio(pd.Series(self._y), self._preds))
-
-    #def sf(self, attr) -> float:
+    def sf(self, attributes) -> float:
+        for i in range(len(self._y)):
+            group = tuple([self._X[attr][i] for attr in attributes])
+            if group not in self.groups:
+                self.groups[group] = []
+            self.groups[group].append(i)
+        sgf = self.sgf()
+        return self._round(sum(sgf.values())/len(sgf.values()))
+    
+    def oneSF(self, attribute) -> float:
+        for i in range(len(self._y)):
+            group = tuple([self._X[attribute][i]])
+            if group not in self.groups:
+                self.groups[group] = []
+            self.groups[group].append(i)
+        sgf = self.sgf()
+        return self._round(sum(sgf.values())/len(sgf.values()))
 
     def meod(self, attributes, a=None):
         for i in range(len(self._y)):
@@ -243,6 +314,19 @@ class Metrics:
             pr = (conf['tp']+conf['fp']) / len(sub)
             prs[group] = pr
         return prs
+    
+    def sgf(self):
+        sgf = {}
+        for group in self.groups:
+            sub = self.groups[group]
+            conf = self.confusionMatrix(sub)
+            if (conf['tp']+conf['fp']+conf['tn']+conf['fn']) == 0:
+                sg = 0 
+            else:
+                sg = conf['tp']/(conf['tp']+conf['fp']+conf['tn']+conf['fn'])
+            sg = conf['fp'] / (conf['fp'] + conf['tn'])
+            sgf[group] = sg
+        return sgf
 
     def flip_X(self,attribute):
         X_flip = self._X.copy()
