@@ -26,21 +26,23 @@ class MEPSData(Data):
         self.pre_processing()
 
         self._X = pd.DataFrame(self.data)
+        # print(self._X)
         self._y = self.data['Probability'].to_numpy()
 
-        if preprocessing == "FairBalance":
+        # if preprocessing == "FairBalance":
             # self._X = self.fairbalance_columns(self._X)
-            pass
-        else:
-            self._X = self.fairmask_columns(self._X)
+            # pass
+        # else:
+        self._X = self.fairmask_columns(self._X)
+        # print(self._X)
         # Create train-test split
         self.new_data_split()
 
     def fairbalance_columns(self, X):
-        return X[[ ]]
+        return X
 
     def fairmask_columns(self, X):
-        return X[["REGION", "AGE", "SEX", "race", "MARRY", "FTSTU", "ACTDTY", "HONRDC", "RTHLTH", "MNHLTH", "HIBPDX",
+        return X[["REGION", "AGE", "sex", "race", "MARRY", "FTSTU", "ACTDTY", "HONRDC", "RTHLTH", "MNHLTH", "HIBPDX",
                   "CHDDX", "ANGIDX", "MIDX", "OHRTDX", "STRKDX", "EMPHDX", "CHBRON", "CHOLDX", "CANCERDX", "DIABDX",
                   "JTPAIN", "ARTHDX", "ARTHTYPE", "ASTHDX", "ADHDADDX", "PREGNT", "WLKLIM", "ACTLIM", "SOCLIM", "COGLIM",
                   "DFHEAR42", "DFSEE42", "ADSMOK42", "PCS42", "MCS42", "K6SUM42", "PHQ242", "EMPST", "POVCAT", "INSCOV", "Probability", "PERWT15F"]]

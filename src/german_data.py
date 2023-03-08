@@ -27,13 +27,16 @@ class GermanData(Data):
 
         self._X = pd.DataFrame(self.data)
         self._y = self.data['Probability'].to_numpy()
+        print(self._X)
 
         if preprocessing == "FairBalance":
             # self._X = self.fairbalance_columns(self._X)
             pass
         else:
-            # self._X = self.fairmask_columns(self._X)
-            pass
+            self._X = self.fairmask_columns(self._X)
+            # pass
+        print(self._X)
+
         # Create train-test split
         self.new_data_split()
 
@@ -42,10 +45,10 @@ class GermanData(Data):
 
     def fairmask_columns(self, X):
         #NOT COMPLETE
-        return X[["sex", "age",	"Probability"]]
-        # ,	"credit_history"=Delay	credit_history=None/Paid	credit_history=Other
-        # savings=500+	savings=<500	savings=Unknown/None
-        # employment=1-4 years	employment=4+ years	employment=Unemployed]]
+        return X[["sex", "age",	"Probability",
+                  "credit_history=Delay", "credit_history=None/Paid", "credit_history=Other",
+                "savings=500+",	"savings=<500",	"savings=Unknown/None",
+                "employment=1-4 years",	"employment=4+ years",	"employment=Unemployed"]]
 
     def pre_processing(self):
         # preprocessing done according to preprocessing.ipynb

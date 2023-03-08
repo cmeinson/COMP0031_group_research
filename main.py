@@ -11,7 +11,7 @@ other = {Tester.OPT_SAVE_INTERMID: False}
 other_fb = other.copy()
 other_fb[BaseModel.OPT_FBALANCE] = True
 
-datasets =  [Tester.ADULT_D, Tester.COMPAS_D]
+datasets =  [Tester.ADULT_D, Tester.COMPAS_D, Tester.MEPS_D]#, Tester.GERMAN_D]
 mls = [(Tester.BASE_ML, Model.LG_R, None, "FairBalance", other_fb), 
        (Tester.FAIRBALANCE, Model.LG_R, None, "FairBalance", other_fb), 
 
