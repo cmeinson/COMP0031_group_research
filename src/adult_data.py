@@ -13,7 +13,7 @@ FairMask Adult Data columns: age, education-num, race, sex, capital-gain, capita
 
 class AdultData(Data):
     race_pos_label = "White"
-    race_all_splits = ["White", "Black", 'Asian-Pac-Islander', 'Amer-Indian-Eskimo', 'Other']
+    race_all_splits = ["White", 'Asian-Pac-Islander', "Black", 'Amer-Indian-Eskimo', 'Other']
 
     def __init__(self, preprocessing:str = None, test_ratio = 0.2) -> None:
         """
@@ -27,7 +27,6 @@ class AdultData(Data):
         """
         self._test_ratio = test_ratio
         self.data = pd.read_csv('data/adult.csv')
-        print(set(self.data["race"]))
 
         # Do default pre-processing from Preprocessing.ipynb
         self.pre_processing()
@@ -46,10 +45,14 @@ class AdultData(Data):
 
     def new_data_split(self) -> None:
         """Changes the data split"""
-        self._X_train, self._X_test_cat, self._y_train, self._y_test = train_test_split(self._X, self._y,
+        self._X_train_cat, self._X_test_cat, self._y_train, self._y_test = train_test_split(self._X, self._y,
                                                                                     test_size=self._test_ratio)
+        self.update_race_pos_label(self.race_pos_label)
+
+    def update_race_pos_label(self, new):
+        self.race_pos_label = new
         self._X_test = self.copy_with_bin_race(self._X_test_cat, self.race_pos_label)
-        self._X_train = self.copy_with_bin_race(self._X_train, self.race_pos_label)
+        self._X_train = self.copy_with_bin_race(self._X_train_cat, self.race_pos_label)
 
     def get_all_test_data(self) -> List[Tuple[pd.DataFrame, np.array]]:
         out = []

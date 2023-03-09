@@ -25,6 +25,9 @@ class Metrics:
     F1 = "f1score"
 
     #fairness metrics
+    A_AOD = "[AOD] Abs Average Odds Difference"
+    A_EOD = "[EOD] Abs Equal Opportunity Difference"
+    A_SPD = "[SPD] Abs Statistical Parity Difference"
     AOD = "[AOD] Average Odds Difference"
     EOD = "[EOD] Equal Opportunity Difference"
     SPD = "[SPD] Statistical Parity Difference"
@@ -37,6 +40,9 @@ class Metrics:
     DF = "[DF] Differential Fairness"
     ONE_DF = "[DF] Differential Fairness for One Attribute"
 
+    A_M_EOD = "[MEOD] Abs M Equal Opportunity Difference"
+    A_M_AOD = "[MEOD] Abs M Average Odds Difference"
+
     M_EOD = "[MEOD] M Equal Opportunity Difference"
     M_AOD = "[MEOD] M Average Odds Difference"
 
@@ -46,8 +52,8 @@ class Metrics:
         # might need more attributes idk
         self._X = X # not even sure if needed
         self._X.reset_index(drop=True, inplace=True) # TODO: would it be better for everyone if this was done in the data class?
-        self._y = y
-        self._preds = preds
+        self._y = 1 - y
+        self._preds = 1 - preds
         self._predict = predict
         self.groups = defaultdict(list)
         self._round = lambda x: round(x,5)
@@ -57,11 +63,11 @@ class Metrics:
 
     def get_subgroup_dependant():
         # metrics that need a list of attributes as input to create subgroups
-        return [Metrics.SF, Metrics.DF, Metrics.M_EOD, Metrics.M_AOD]
+        return [Metrics.SF, Metrics.DF, Metrics.M_EOD, Metrics.M_AOD, Metrics.A_M_EOD, Metrics.A_M_AOD]
 
     def get_attribute_dependant():
         # metrics that need a single attribute as input
-        return [Metrics.AOD, Metrics.EOD, Metrics.SPD, Metrics.DI, Metrics.FR, Metrics.ONE_SF, Metrics.ONE_DF]
+        return [Metrics.A_AOD, Metrics.A_EOD, Metrics.A_SPD, Metrics.AOD, Metrics.EOD, Metrics.SPD, Metrics.DI, Metrics.FR, Metrics.ONE_SF, Metrics.ONE_DF]
 
     def get_attribute_independant():
         # metrics independant of attributes
@@ -76,6 +82,12 @@ class Metrics:
             return self.recall()
         elif metric_name == self.F1:
             return self.f1score()
+        elif metric_name == self.A_AOD:
+            return abs(self.aod(attr))
+        elif metric_name == self.A_EOD:
+            return abs(self.eod(attr))
+        elif metric_name == self.A_SPD:
+            return abs(self.spd(attr))
         elif metric_name == self.AOD:
             return self.aod(attr)
         elif metric_name == self.EOD:
@@ -96,6 +108,10 @@ class Metrics:
             return self.meod(attr)
         elif metric_name == self.M_AOD:
             return self.maod(attr)
+        elif metric_name == self.A_M_EOD:
+            return abs(self.meod(attr))
+        elif metric_name == self.A_M_AOD:
+            return abs(self.maod(attr))
         elif metric_name == self.FR:
             return self.fr(attr)
         else:
@@ -130,7 +146,7 @@ class Metrics:
         tpr1 = conf1['tp'] / guard(conf1['tp'] + conf1['fn'])
         fpr0 = conf0['fp'] / guard(conf0['fp'] + conf0['tn'])
         fpr1 = conf1['fp'] / guard(conf1['fp'] + conf1['tn'])
-        return abs(self._round(0.5 * (tpr1 + fpr1 - tpr0 - fpr0)))
+        return (self._round(0.5 * (tpr1 + fpr1 - tpr0 - fpr0)))
 
     def eod(self, attribute) -> float:
         for i in range(len(self._y)):
@@ -144,7 +160,7 @@ class Metrics:
         conf1 = self.confusionMatrix(ind1)
         tpr0 = conf0['tp'] / guard(conf0['tp'] + conf0['fn'])
         tpr1 = conf1['tp'] / guard(conf1['tp'] + conf1['fn'])
-        return abs(self._round(tpr1 - tpr0))
+        return (self._round(tpr1 - tpr0))
 
     def spd(self, attribute) -> float:
         for i in range(len(self._y)):
@@ -158,7 +174,7 @@ class Metrics:
         conf1 = self.confusionMatrix(ind1)
         pr0 = (conf0['tp']+conf0['fp']) / guard(len(ind0))
         pr1 = (conf1['tp']+conf1['fp']) / guard(len(ind1))
-        return abs(self._round(pr1 - pr0))
+        return (self._round(pr1 - pr0))
 
     def di(self, attribute) -> float:
         for i in range(len(self._y)):
@@ -173,7 +189,7 @@ class Metrics:
         pr0 = (conf0['tp']+conf0['fp']) / guard(len(ind0))
         pr1 = (conf1['tp']+conf1['fp']) / guard(len(ind1))
         di = pr1/guard(pr0)
-        return self._round(abs(1-di))
+        return self._round((1-di))
 
     def fr(self, attribute):
         X_flip = self.flip_X(attribute)
@@ -193,7 +209,7 @@ class Metrics:
             countsTotal[index] += 1
             if self._preds[i] == 1:
                 countsClassOne[index] += 1
-        probabilitiesForDFSmoothed = (countsClassOne + 0.5) /(countsTotal + 1.0)
+        probabilitiesForDFSmoothed = (countsClassOne + 0.5) / (countsTotal + 1.0)
         epsilonSmoothed = self.dfBinary(probabilitiesForDFSmoothed)
         return self._round(epsilonSmoothed)
     
@@ -206,7 +222,7 @@ class Metrics:
             countsTotal[index] += 1
             if self._preds[i] == 1:
                 countsClassOne[index] += 1
-        probabilitiesForDFSmoothed = (countsClassOne + 0.5) /(countsTotal + 1.0)
+        probabilitiesForDFSmoothed = (countsClassOne + 0.5) / (countsTotal + 1.0)
         epsilonSmoothed = self.dfOneBinary(probabilitiesForDFSmoothed)
         return self._round(epsilonSmoothed)
     
@@ -241,7 +257,7 @@ class Metrics:
                 self.groups[group] = []
             self.groups[group].append(i)
         sgf = self.sgf()
-        return self._round(sum(sgf.values())/len(sgf.values()))
+        return self._round(sum(sgf.values())/guard(len(sgf.values())))
     
     def oneSF(self, attribute) -> float:
         for i in range(len(self._y)):
@@ -250,7 +266,7 @@ class Metrics:
                 self.groups[group] = []
             self.groups[group].append(i)
         sgf = self.sgf()
-        return self._round(sum(sgf.values())/len(sgf.values()))
+        return self._round(sum(sgf.values())/guard(len(sgf.values())))
 
        
 
@@ -262,7 +278,7 @@ class Metrics:
                 self.groups[group] = []
             self.groups[group].append(i)
         tprs = self.tprs()
-        return abs(self._round(max(tprs.values())-min(tprs.values())))
+        return (self._round(max(tprs.values())-min(tprs.values())))
 
     def maod(self, attributes, a=None):
         for i in range(len(self._y)):
@@ -271,7 +287,7 @@ class Metrics:
                 self.groups[group] = []
             self.groups[group].append(i)
         aos = self.aos()
-        return abs(self._round(max(aos.values()) - min(aos.values())))
+        return (self._round(max(aos.values()) - min(aos.values())))
 
     def confusionMatrix(self, sub=None):
         if sub is None:
@@ -331,8 +347,8 @@ class Metrics:
             if (conf['tp']+conf['fp']+conf['tn']+conf['fn']) == 0:
                 sg = 0 
             else:
-                sg = conf['tp']/(conf['tp']+conf['fp']+conf['tn']+conf['fn'])
-            sg = conf['fp'] / (conf['fp'] + conf['tn'])
+                sg = conf['tp']/ guard(conf['tp']+conf['fp']+conf['tn']+conf['fn'])
+            sg = conf['fp'] / guard(conf['fp'] + conf['tn'])
             sgf[group] = sg
         return sgf
 

@@ -4,7 +4,8 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 
 class Data:
-    # NB: if ur implementation of the class takes more than one file pls put it all into sub folder
+    race_pos_label = None
+    race_all_splits = []
 
     def __init__(self, preprocessing:str = None, test_ratio = 0.2) -> None:
         """
@@ -48,6 +49,9 @@ class Data:
         :rtype: List[str]
         """
         raise NotImplementedError
+    
+    def update_race_pos_label(self, new):
+        self.race_pos_label = new
     
 
 
