@@ -7,10 +7,6 @@ from collections import defaultdict
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, confusion_matrix
 #from aif360.sklearn.metrics import statistical_parity_difference, equal_opportunity_difference, average_odds_difference, disparate_impact_ratio, df_bias_amplification
 
-# how do we wanna do metrics?
-
-# we can do just a simple metrcs class with all the mathy functions and then a separate evaluator class?
-
 class Metrics:
     # All available metrics:
     #performance metrics
