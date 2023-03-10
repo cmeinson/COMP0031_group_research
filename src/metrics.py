@@ -214,20 +214,20 @@ class Metrics:
             countsTotal[index] += 1
             if self._preds[i] == 1:
                 countsClassOne[index] += 1
-        probabilitiesForDFSmoothed = (countsClassOne + 0.5) /(countsTotal + 1.0)
+        probabilitiesForDFSmoothed = (countsClassOne + 0.5) /(countsTotal + 1.0) #0.5 and 1 are Dirichlet smoothing parameters
         epsilonSmoothed = self.dfBinary(probabilitiesForDFSmoothed)
         return self._round(epsilonSmoothed)
     
-    def oneDF(self, attributes) -> float:
-        intersectGroups = np.unique(attributes)
+    def oneDF(self, attribute) -> float:
+        intersectGroups = np.unique(attribute)
         countsClassOne = np.zeros((len(intersectGroups)))
         countsTotal = np.zeros((len(intersectGroups)))
         for i in range(len(self._preds)):
-            index=np.where((intersectGroups == [attributes]))[0]
+            index=np.where((intersectGroups == [attribute]))[0]
             countsTotal[index] += 1
             if self._preds[i] == 1:
                 countsClassOne[index] += 1
-        probabilitiesForDFSmoothed = (countsClassOne + 0.5) /(countsTotal + 1.0)
+        probabilitiesForDFSmoothed = (countsClassOne + 0.5) /(countsTotal + 1.0) #0.5 and 1 are Dirichlet smoothing parameters
         epsilonSmoothed = self.dfOneBinary(probabilitiesForDFSmoothed)
         return self._round(epsilonSmoothed)
     
@@ -359,7 +359,6 @@ class Metrics:
                 sg = 0 
             else:
                 sg = conf['tp']/(conf['tp']+conf['fp']+conf['tn']+conf['fn'])
-            #sg = conf['fp'] / (conf['fp'] + conf['tn'])
             sgf[group] = sg
         return sgf
 
