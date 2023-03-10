@@ -32,7 +32,7 @@ class Tester:
         self._preds = None
         self._evals = None
         self._data = None
-        print("\n new tester ---------------------------------")
+        if self.VERBOSE: print("\n new tester ---------------------------------")
 
     def run_test(self, metric_names: List[str], dataset: str, 
                  bias_mit: str, ml_method: str, bias_ml_method: str = None, 
@@ -43,7 +43,7 @@ class Tester:
 
         :param metric_names: names of the metrics to use in evaluation.
         :type metric_names: List[str]
-        :param dataset: name of the dataset
+        :param dataset: name of the datase
         :type dataset: str
         :param bias_mit: nam of the bias mitigation method
         :type bias_mit: str
@@ -68,7 +68,7 @@ class Tester:
         :return: Used testing X and y, along with all the predictions
         :rtype: pd.DataFrame, np.array, List[np.array]
         """
-        print("--------------")
+        
         model = self._get_model(bias_mit, other)
         self._data = self._get_dataset(dataset,data_preprocessing)
 
@@ -93,6 +93,7 @@ class Tester:
             race_splits, splits = self._get_test_data(other)
             ##################################################
             if self.VERBOSE:
+                print("--------------")
                 pos, neg = 0,0
                 for j in range(len(rep_preds)):
                     if rep_preds[j] == 0:

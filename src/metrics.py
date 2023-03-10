@@ -40,6 +40,8 @@ class Metrics:
     DF = "[DF] Differential Fairness"
     ONE_DF = "[DF] Differential Fairness for One Attribute"
 
+    POS = "[+%] Proportion of Positive labels for the group"
+
     A_M_EOD = "[MEOD] Abs M Equal Opportunity Difference"
     A_M_AOD = "[MEOD] Abs M Average Odds Difference"
 
@@ -52,8 +54,8 @@ class Metrics:
         # might need more attributes idk
         self._X = X # not even sure if needed
         self._X.reset_index(drop=True, inplace=True) # TODO: would it be better for everyone if this was done in the data class?
-        self._y = 1 - y
-        self._preds = 1 - preds
+        self._y = y
+        self._preds = preds
         self._predict = predict
         self.groups = defaultdict(list)
         self._round = lambda x: round(x,5)
@@ -67,7 +69,7 @@ class Metrics:
 
     def get_attribute_dependant():
         # metrics that need a single attribute as input
-        return [Metrics.A_AOD, Metrics.A_EOD, Metrics.A_SPD, Metrics.AOD, Metrics.EOD, Metrics.SPD, Metrics.DI, Metrics.FR, Metrics.ONE_SF, Metrics.ONE_DF]
+        return [Metrics.POS, Metrics.A_AOD, Metrics.A_EOD, Metrics.A_SPD, Metrics.AOD, Metrics.EOD, Metrics.SPD, Metrics.DI, Metrics.FR, Metrics.ONE_SF, Metrics.ONE_DF]
 
     def get_attribute_independant():
         # metrics independant of attributes
@@ -114,6 +116,8 @@ class Metrics:
             return abs(self.maod(attr))
         elif metric_name == self.FR:
             return self.fr(attr)
+        elif metric_name == self.POS:
+            return self.pos(attr)
         else:
             raise RuntimeError("Invalid metric name: ", metric_name)
 
@@ -121,8 +125,7 @@ class Metrics:
         return accuracy_score(self._y, self._preds)
         #return np.mean(self._y == self._preds)
 
-    # etc other metrics
-
+    
     def precision(self) -> float:
         return self._round(precision_score(self._y, self._preds))
 
@@ -131,6 +134,15 @@ class Metrics:
 
     def f1score(self) -> float:
         return self._round(f1_score(self._y, self._preds))
+
+    def pos(self, attribute) -> float:
+        total, count = 0,0
+        for i in range(len(self._y)):
+            if (self._X[attribute][i] == 1):
+                count += 1
+                total += self._preds[i]
+        return total / count
+
 
     def aod(self, attribute):
         for i in range(len(self._y)):
