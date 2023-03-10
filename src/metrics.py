@@ -120,10 +120,18 @@ class Metrics:
         ind1 = np.where(self._X[attribute] == 1)[0]
         conf0 = self.confusionMatrix(ind0)
         conf1 = self.confusionMatrix(ind1)
-        tpr0 = conf0['tp'] / (conf0['tp'] + conf0['fn'])
-        tpr1 = conf1['tp'] / (conf1['tp'] + conf1['fn'])
-        fpr0 = conf0['fp'] / (conf0['fp'] + conf0['tn'])
-        fpr1 = conf1['fp'] / (conf1['fp'] + conf1['tn'])
+        if (conf0['tp'] + conf0['fn']) == 0:
+            tpr0 = 0
+            tpr1 = 0
+        else:
+            tpr0 = conf0['tp'] / (conf0['tp'] + conf0['fn'])
+            tpr1 = conf1['tp'] / (conf1['tp'] + conf1['fn'])
+        if (conf0['fp'] + conf0['tn']) == 0:
+            fpr0 = 0
+            fpr1 = 0
+        else:
+            fpr0 = conf0['fp'] / (conf0['fp'] + conf0['tn'])
+            fpr1 = conf1['fp'] / (conf1['fp'] + conf1['tn'])
         return abs(self._round(0.5 * (tpr1 + fpr1 - tpr0 - fpr0)))
 
     def eod(self, attribute) -> float:
@@ -136,8 +144,12 @@ class Metrics:
         ind1 = np.where(self._X[attribute] == 1)[0]
         conf0 = self.confusionMatrix(ind0)
         conf1 = self.confusionMatrix(ind1)
-        tpr0 = conf0['tp'] / (conf0['tp'] + conf0['fn'])
-        tpr1 = conf1['tp'] / (conf1['tp'] + conf1['fn'])
+        if (conf0['tp'] + conf0['fn']) == 0:
+            tpr0 = 0
+            tpr1 = 0
+        else:
+            tpr0 = conf0['tp'] / (conf0['tp'] + conf0['fn'])
+            tpr1 = conf1['tp'] / (conf1['tp'] + conf1['fn'])
         return abs(self._round(tpr1 - tpr0))
 
     def spd(self, attribute) -> float:
@@ -150,8 +162,14 @@ class Metrics:
         ind1 = np.where(self._X[attribute] == 1)[0]
         conf0 = self.confusionMatrix(ind0)
         conf1 = self.confusionMatrix(ind1)
-        pr0 = (conf0['tp']+conf0['fp']) / len(ind0)
-        pr1 = (conf1['tp']+conf1['fp']) / len(ind1)
+        if len(ind0) == 0:
+            pr0 = 0
+        else:
+            pr0 = (conf0['tp']+conf0['fp']) / len(ind0)
+        if len(ind1) == 0:
+            pr1 = 0
+        else:
+            pr1 = (conf1['tp']+conf1['fp']) / len(ind1)
         return abs(self._round(pr1 - pr0))
 
     def di(self, attribute) -> float:
@@ -164,9 +182,18 @@ class Metrics:
         ind1 = np.where(self._X[attribute] == 1)[0]
         conf0 = self.confusionMatrix(ind0)
         conf1 = self.confusionMatrix(ind1)
-        pr0 = (conf0['tp']+conf0['fp']) / len(ind0)
-        pr1 = (conf1['tp']+conf1['fp']) / len(ind1)
-        di = pr1/pr0
+        if len(ind0) == 0:
+            pr0 = 0
+        else:
+            pr0 = (conf0['tp']+conf0['fp']) / len(ind0)
+        if len(ind1) == 0:
+            pr1 = 0
+        else:
+            pr1 = (conf1['tp']+conf1['fp']) / len(ind1)
+        if pr0 == 0:
+            di = 0
+        else:
+            di = pr1/pr0
         return self._round(abs(1-di))
 
     def fr(self, attribute):
@@ -286,7 +313,10 @@ class Metrics:
         for group in self.groups:
             sub = self.groups[group]
             conf = self.confusionMatrix(sub)
-            tpr = conf['tp'] / (conf['tp'] + conf['fn'])
+            if (conf['tp'] + conf['fn']) == 0:
+                tpr = 0
+            else:
+                tpr = conf['tp'] / (conf['tp'] + conf['fn'])
             tprs[group] = tpr
         return tprs
 
@@ -295,7 +325,10 @@ class Metrics:
         for group in self.groups:
             sub = self.groups[group]
             conf = self.confusionMatrix(sub)
-            fpr = conf['fp'] / (conf['fp'] + conf['tn'])
+            if (conf['fp'] + conf['tn']) == 0:
+                fpr = 0
+            else:
+                fpr = conf['fp'] / (conf['fp'] + conf['tn'])
             fprs[group] = fpr
         return fprs
 
@@ -310,7 +343,10 @@ class Metrics:
         for group in self.groups:
             sub = self.groups[group]
             conf = self.confusionMatrix(sub)
-            pr = (conf['tp']+conf['fp']) / len(sub)
+            if len(sub) == 0:
+                pr = 0
+            else:
+                pr = (conf['tp']+conf['fp']) / len(sub)
             prs[group] = pr
         return prs
     
