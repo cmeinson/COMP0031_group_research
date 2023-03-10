@@ -39,13 +39,16 @@ class MEPSData(Data):
         self.new_data_split()
 
     def fairbalance_columns(self, X):
-        return X
+        return X[["REGION", "AGE", "sex", "race", "MARRY", "FTSTU", "ACTDTY", "HONRDC", "RTHLTH", "MNHLTH", "HIBPDX",
+                  "CHDDX", "ANGIDX", "MIDX", "OHRTDX", "STRKDX", "EMPHDX", "CHBRON", "CHOLDX", "CANCERDX", "DIABDX",
+                  "JTPAIN", "ARTHDX", "ARTHTYPE", "ASTHDX", "ADHDADDX", "PREGNT", "WLKLIM", "ACTLIM", "SOCLIM",
+                  "COGLIM", "DFHEAR42", "DFSEE42", "ADSMOK42", "PCS42", "MCS42", "K6SUM42", "PHQ242", "EMPST", "POVCAT", "INSCOV","PERWT15F"]]
 
     def fairmask_columns(self, X):
         return X[["REGION", "AGE", "sex", "race", "MARRY", "FTSTU", "ACTDTY", "HONRDC", "RTHLTH", "MNHLTH", "HIBPDX",
                   "CHDDX", "ANGIDX", "MIDX", "OHRTDX", "STRKDX", "EMPHDX", "CHBRON", "CHOLDX", "CANCERDX", "DIABDX",
                   "JTPAIN", "ARTHDX", "ARTHTYPE", "ASTHDX", "ADHDADDX", "PREGNT", "WLKLIM", "ACTLIM", "SOCLIM", "COGLIM",
-                  "DFHEAR42", "DFSEE42", "ADSMOK42", "PCS42", "MCS42", "K6SUM42", "PHQ242", "EMPST", "POVCAT", "INSCOV", "Probability", "PERWT15F"]]
+                  "DFHEAR42", "DFSEE42", "ADSMOK42", "PCS42", "MCS42", "K6SUM42", "PHQ242", "EMPST", "POVCAT", "INSCOV", "PERWT15F"]]
 
     def pre_processing(self):
         # preprocessing done according to preprocessing.ipynb
