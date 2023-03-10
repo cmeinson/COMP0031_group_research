@@ -141,8 +141,7 @@ class Metrics:
             if (self._X[attribute][i] == 1):
                 count += 1
                 total += self._preds[i]
-        return total / count
-
+        return total / guard(count)
 
     def aod(self, attribute):
         for i in range(len(self._y)):

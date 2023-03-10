@@ -28,6 +28,13 @@ class AdultData(Data):
         self._test_ratio = test_ratio
         self.data = pd.read_csv('data/adult.csv')
 
+    
+
+        self.race_all_splits = ["White", 'Asian-Pac-Islander', "Black", 'Amer-Indian-Eskimo', 'Other']
+        if preprocessing == "FairBalance merge races" or preprocessing == "FairMask merge races":
+            self.race_all_splits = ["White", 'Asian-Pac-Islander', "Black", 'Other']
+            self.merge_races()
+
         # Do default pre-processing from Preprocessing.ipynb
         self.pre_processing()
 
@@ -35,13 +42,21 @@ class AdultData(Data):
         self._X = pd.DataFrame(self.data)
         self._y = self.data['Probability'].to_numpy()
         
-        if preprocessing == "FairBalance":
+        if preprocessing == "FairBalance" or preprocessing == "FairBalance merge races":
             self._X = self.fairbalance_columns(self._X)
         else:
             self._X = self.fairmask_columns(self._X)
-        
+
+        print("after")
+        print(set(self._X["race"]))
+        print(self._X["race"].value_counts())
+
         # Create train-test split
-        self.new_data_split()
+        self.new_data_split()   
+
+    def merge_races(self, remove: List[str] = ['Amer-Indian-Eskimo'], into = "Other"):
+        for rem in remove:
+            self.data['race'] = np.where(self.data['race'] == rem, into, self.data['race'])
 
     def new_data_split(self) -> None:
         """Changes the data split"""

@@ -23,22 +23,34 @@ class CompasData(Data):
         self._test_ratio = test_ratio
         self.data = pd.read_csv('data/compas-scores-two-years.csv')
 
-        #for race in self.race_all_splits:
-           # print(race, ' count:', (self.data['race']==race).sum())
+        self.race_all_splits = ["Caucasian", "Other", "Hispanic", "African-American"]
+        if preprocessing == "FairBalance merge races" or preprocessing == "FairMask merge races":
+            self.race_all_splits = ["Caucasian", "Other", "African-American"]
+            self.merge_races()
 
         # Do default preprocessing
         self.pre_processing()
+           
 
+        # Split into input and output
         self._X = pd.DataFrame(self.data)
         self._y = self.data['Probability'].to_numpy()
-
-        if preprocessing == "FairBalance":
+        
+        if preprocessing == "FairBalance" or preprocessing == "FairBalance merge races":
             self._X = self.fairbalance_columns(self._X)
         else:
             self._X = self.fairmask_columns(self._X)
 
+        print("after")
+        print(set(self._X["race"]))
+        print(self._X["race"].value_counts())
+
         # Create train-test split
-        self.new_data_split()                                                                                 
+        self.new_data_split()   
+
+    def merge_races(self, remove: List[str] = ["Hispanic", "Asian", "Native American"], into = "Other"):
+        for rem in remove:
+            self.data['race'] = np.where(self.data['race'] == rem, into, self.data['race'])
 
     def fairbalance_columns(self, X):
         return X[['sex', 'age', 'age_cat', 'race',
