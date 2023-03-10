@@ -41,9 +41,7 @@ class CompasData(Data):
         else:
             self._X = self.fairmask_columns(self._X)
 
-        print("after")
-        print(set(self._X["race"]))
-        print(self._X["race"].value_counts())
+
 
         # Create train-test split
         self.new_data_split()   
