@@ -4,8 +4,7 @@ from typing import List, Callable
 import warnings
 from sklearn import metrics
 from collections import defaultdict
-from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, confusion_matrix
-#from aif360.sklearn.metrics import statistical_parity_difference, equal_opportunity_difference, average_odds_difference, disparate_impact_ratio, df_bias_amplification
+from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
 
 # how do we wanna do metrics?
 
@@ -324,7 +323,7 @@ class Metrics:
                 sg = 0 
             else:
                 sg = conf['tp']/(conf['tp']+conf['fp']+conf['tn']+conf['fn'])
-            sg = conf['fp'] / (conf['fp'] + conf['tn'])
+            #sg = conf['fp'] / (conf['fp'] + conf['tn'])
             sgf[group] = sg
         return sgf
 
