@@ -3,6 +3,8 @@ import pandas as pd
 from typing import List, Callable
 import warnings
 from sklearn import metrics
+import copy
+import math
 from collections import defaultdict
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
 
@@ -26,9 +28,11 @@ class Metrics:
     FR = "[FR] Flip Rate"
 
     SF = "[SF] Statistical Parity Subgroup Fairness"
+    SF_INV = "[SF] Statistical Parity Subgroup Fairness if 0 was the positive label"
     ONE_SF = "[SF] Statistical Parity Subgroup Fairness for One Attribute"
 
     DF = "[DF] Differential Fairness"
+    DF_INV = "[DF] Differential Fairness if 0 was the positive label"
     ONE_DF = "[DF] Differential Fairness for One Attribute"
 
     M_EOD = "[MEOD] M Equal Opportunity Difference"
@@ -51,7 +55,7 @@ class Metrics:
 
     def get_subgroup_dependant():
         # metrics that need a list of attributes as input to create subgroups
-        return [Metrics.SF, Metrics.DF, Metrics.M_EOD, Metrics.M_AOD]
+        return [Metrics.SF, Metrics.SF_INV, Metrics.DF, Metrics.DF_INV, Metrics.M_EOD, Metrics.M_AOD]
 
     def get_attribute_dependant():
         # metrics that need a single attribute as input
@@ -80,12 +84,16 @@ class Metrics:
             return self.di(attr)
         elif metric_name == self.SF:
             return self.sf(attr)
+        elif metric_name == self.SF_INV:
+            return self.sf(attr, outcome='n')
         elif metric_name == self.ONE_SF:
-            return self.oneSF(attr)
+            return self.sf([attr])
         elif metric_name == self.DF:
             return self.df(attr)
+        elif metric_name == self.DF_INV:
+            return self.df(attr, outcome='n')
         elif metric_name == self.ONE_DF:
-            return self.oneDF(attr)
+            return self.df([attr])
         elif metric_name == self.M_EOD:
             return self.meod(attr)
         elif metric_name == self.M_AOD:
@@ -203,75 +211,57 @@ class Metrics:
         same = np.count_nonzero(self._preds==preds_flip)
         return self._round((total-same)/total)
     
-    # df taken from https://github.com/rashid-islam/Differential_Fairness/blob/1e90232fdb688a538bb534319ff3c9a7e0dee576/differential_fairness.py
+    def get_subgroup_attr_vals(self, attrs_unique_vals):
+        subgroups = [[]]
+        for attr_vals in attrs_unique_vals:
+            new_subgroups = []
+            for subg in subgroups:
+                for attr_val in attr_vals:
+                    new_subgroups.append(subg+ [attr_val])
+            subgroups = new_subgroups
+        return subgroups
     
-    def df(self, attributes) -> float:
-        intersectGroups = np.unique(attributes,axis=0)
-        countsClassOne = np.zeros((len(intersectGroups)))
-        countsTotal = np.zeros((len(intersectGroups)))
-        for i in range(len(self._preds)):
-            index=np.where((sorted(intersectGroups)==sorted(attributes)))[0]
-            countsTotal[index] += 1
-            if self._preds[i] == 1:
-                countsClassOne[index] += 1
-        probabilitiesForDFSmoothed = (countsClassOne + 0.5) /(countsTotal + 1.0) #0.5 and 1 are Dirichlet smoothing parameters
-        epsilonSmoothed = self.dfBinary(probabilitiesForDFSmoothed)
-        return self._round(epsilonSmoothed)
-    
-    def oneDF(self, attribute) -> float:
-        intersectGroups = np.unique(attribute)
-        countsClassOne = np.zeros((len(intersectGroups)))
-        countsTotal = np.zeros((len(intersectGroups)))
-        for i in range(len(self._preds)):
-            index=np.where((intersectGroups == [attribute]))[0]
-            countsTotal[index] += 1
-            if self._preds[i] == 1:
-                countsClassOne[index] += 1
-        probabilitiesForDFSmoothed = (countsClassOne + 0.5) /(countsTotal + 1.0) #0.5 and 1 are Dirichlet smoothing parameters
-        epsilonSmoothed = self.dfOneBinary(probabilitiesForDFSmoothed)
-        return self._round(epsilonSmoothed)
-    
-    def dfBinary(self, probabilitiesOfPositive):
-        epsilonPerGroup = np.zeros(len(probabilitiesOfPositive))
-        for i in range(len(probabilitiesOfPositive)):
-            epsilon = 0.0
-            for j in range(len(probabilitiesOfPositive)):
-                if i == j:
-                    continue
-                else:
-                    epsilon = max(epsilon,abs(np.log(probabilitiesOfPositive[i])-np.log(probabilitiesOfPositive[j])))
-                    epsilon = max(epsilon,abs(np.log((1-probabilitiesOfPositive[i]))-np.log((1-probabilitiesOfPositive[j]))))
-            epsilonPerGroup[i] = epsilon
-        epsilon = max(epsilonPerGroup)
-        return epsilon
-    
-    def dfOneBinary(self, probabilitiesOfPositive):
-        epsilonPerGroup = np.zeros(len(probabilitiesOfPositive))
-        for i in range(len(probabilitiesOfPositive)):
-            epsilon = 0.0
-            epsilon = max(epsilon,abs(np.log(probabilitiesOfPositive[i])))
-            epsilon = max(epsilon,abs(np.log((1-probabilitiesOfPositive[i]))))
-            epsilonPerGroup[i] = epsilon
-        epsilon = max(epsilonPerGroup)
-        return epsilon
+    def get_subgroup_conf_and_size(self, attributes, attribute_vals):
+        ind = set(range(len(self._y)))
+        for i in range(len(attributes)):
+            ind = ind & set(np.where(self._X[attributes[i]] == attribute_vals[i])[0])
+        return self.confusionMatrix(sorted(ind)), len(ind)  # TODO: do indices have to be sorted?            
 
-    def sf(self, attributes) -> float:
-        for i in range(len(self._y)):
-            group = tuple([self._X[attr][i] for attr in attributes])
-            if group not in self.groups:
-                self.groups[group] = []
-            self.groups[group].append(i)
-        sgf = self.sgf()
-        return self._round(sum(sgf.values())/len(sgf.values()))
+    def sf(self, attributes: List[str], outcome = 'p') -> float:
+        attr_values = [np.unique(self._X[a]) for a in attributes]
+        subgroups = self.get_subgroup_attr_vals(attr_values)
+
+        sample_size = len(self._y)
+        conf = self.confusionMatrix()
+        prob_pos = conf[outcome] / sample_size
+        ans = 0
+        for subgroup in subgroups:
+            group_conf, group_size = self.get_subgroup_conf_and_size(attributes, subgroup)
+            if group_size!= 0:
+                group_prob_pos = group_conf[outcome] / group_size
+                group_prob = group_size / sample_size
+
+                group_ans = abs(prob_pos - group_prob_pos)*group_prob
+                ans = max(group_ans, ans)
+        return ans
     
-    def oneSF(self, attribute) -> float:
-        for i in range(len(self._y)):
-            group = tuple([self._X[attribute][i]])
-            if group not in self.groups:
-                self.groups[group] = []
-            self.groups[group].append(i)
-        sgf = self.sgf()
-        return self._round(sum(sgf.values())/len(sgf.values()))
+    def df(self, attributes: List[str], outcome = 'p') -> float:
+        attr_values = [np.unique(self._X[a]) for a in attributes]
+        subgroups = self.get_subgroup_attr_vals(attr_values)
+
+        ans_min, ans_max = 1, 1
+        for subgroup1 in subgroups:
+            conf1, size1 = self.get_subgroup_conf_and_size(attributes, subgroup1)
+            for subgroup2 in subgroups:
+                conf2, size2 = self.get_subgroup_conf_and_size(attributes, subgroup2)
+                if size1!=0 and size2!=0:
+                    prob_pos1 = conf1[outcome] / size1
+                    prob_pos2 = conf2[outcome] / size2
+                    ans = prob_pos1 / prob_pos2
+                    ans_max = max(ans, ans_max)
+                    ans_min = min(ans, ans_min)            
+        ans = max(math.log(ans_max), -math.log(ans_min))
+        return ans
 
     def meod(self, attributes, a=None):
         for i in range(len(self._y)):
@@ -306,6 +296,8 @@ class Metrics:
                 conf['fp'] += 1
             elif y[i]==1 and y_pred[i]==0:
                 conf['fn'] += 1
+        conf["p"] = conf['tp'] + conf['fp']
+        conf["n"] = conf['tn'] + conf['fn']
         return conf
 
     def tprs(self):
