@@ -39,6 +39,7 @@ class AdultData(Data):
         self.pre_processing()
 
         # Split into input and output
+
         self._X = pd.DataFrame(self.data)
         self._y = self.data['Probability'].to_numpy()
         
@@ -46,7 +47,6 @@ class AdultData(Data):
             self._X = self.fairbalance_columns(self._X)
         else:
             self._X = self.fairmask_columns(self._X)
-
 
 
         # Create train-test split

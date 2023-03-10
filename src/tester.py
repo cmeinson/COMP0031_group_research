@@ -5,6 +5,8 @@ from .data_interface import Data, DummyData
 from .adult_data import AdultData
 from .compas_data import CompasData
 from .adult_data import AdultData
+from .meps_data import MEPSData
+from .german_data import GermanData
 from .ml_interface import Model, BaseModel
 from .metrics import Metrics
 from typing import List, Dict, Any
@@ -19,6 +21,8 @@ class Tester:
     # Avalable datasets for testing:
     ADULT_D = "Adult Dataset"
     COMPAS_D = "Compas Dataset"
+    MEPS_D = "MEPS Dataset"
+    GERMAN_D = "German Dataset"
     DUMMY_D = "Dummy Dataset"
 
     # Available bias mitigation methods
@@ -185,6 +189,10 @@ class Tester:
             data = AdultData(preprocessing)
         elif name == self.COMPAS_D:
             data = CompasData(preprocessing)
+        elif name == self.MEPS_D:
+            data = MEPSData(preprocessing)
+        elif name == self.GERMAN_D:
+            data = GermanData(preprocessing)
         elif name == self.DUMMY_D:
             data = DummyData(preprocessing)
         else:
