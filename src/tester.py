@@ -14,7 +14,9 @@ from .fairbalance import FairBalanceModel
 from .fairmask import FairMaskModel
 
 class Tester:
+    VERBOSE = True
     OPT_SAVE_INTERMID = "save intermediate results to file"
+    OPT_ALL_RACE_SPLITS = "evaluate fairness for each race split separately"
 
     # Avalable datasets for testing:
     ADULT_D = "Adult Dataset"
@@ -34,6 +36,7 @@ class Tester:
         self._preds = None
         self._evals = None
         self._data = None
+        if self.VERBOSE: print("\n new tester ---------------------------------")
 
     def run_test(self, metric_names: List[str], dataset: str, 
                  bias_mit: str, ml_method: str, bias_ml_method: str = None, 
@@ -44,7 +47,7 @@ class Tester:
 
         :param metric_names: names of the metrics to use in evaluation.
         :type metric_names: List[str]
-        :param dataset: name of the dataset
+        :param dataset: name of the datase
         :type dataset: str
         :param bias_mit: nam of the bias mitigation method
         :type bias_mit: str
@@ -63,56 +66,106 @@ class Tester:
         :param other: any other params described below, defaults to {}
         :type other: dict, optional
             "other" params:
-                "save_intermediate" - if set to True saves to file not only the mean results of all runs but also each intermediate result
+                OPT_SAVE_INTERMID - if set to True saves to file not only the mean results of all runs but also each intermediate result.
+                OPT_ALL_RACE_SPLITS - evaluates fairness for each race split separately.
 
         :return: Used testing X and y, along with all the predictions
         :rtype: pd.DataFrame, np.array, List[np.array]
         """
+        
         model = self._get_model(bias_mit, other)
         self._data = self._get_dataset(dataset,data_preprocessing)
 
         if not sensitive_attr:
             sensitive_attr = self._data.get_sensitive_column_names()
 
+        n_test_datas = len(self._data.race_all_splits)
         self._preds = []
-        self._evals = None
+        self._evals = [None for _ in range(n_test_datas)]
 
         for _ in range(repetitions):
             if not same_data_split: self._data.new_data_split()
-            
+
+            # TRAIN
             X, y = self._data.get_train_data()
             model.train(X, y, sensitive_attr, ml_method, bias_ml_method, other)
 
+            # EVALUATE
             X, y = self._data.get_test_data()
             predict = lambda x: model.predict(x.copy(), other)
             rep_preds = predict(X)
-            evals = self._evaluate(Metrics(X, y, rep_preds, predict), metric_names, sensitive_attr)
+            race_splits, splits = self._get_test_data(other)
+            ##################################################
+            if self.VERBOSE:
+                print("--------------")
+                pos, neg = 0,0
+                for j in range(len(rep_preds)):
+                    if rep_preds[j] == 0:
+                        neg +=1
+                    else:
+                        pos +=1
+                print(self._data.race_pos_label," pos:", pos, " neg:",neg)
 
-            self._acc_evals(evals)
-            self._preds.append(rep_preds)
+            ##################################################
+            for i in range(len(splits)):
+                X, y = splits[i]
+                # NB: FLIPRATE DOES NOT WORK WITH MY EXPERIMENTS
+                evals = self._evaluate(Metrics(X, y, rep_preds, predict), metric_names, sensitive_attr)
 
-            if repetitions==1 or (self.OPT_SAVE_INTERMID in other and other[self.OPT_SAVE_INTERMID]):
-                self.save_test_results(evals, dataset, bias_mit, ml_method, bias_ml_method, sensitive_attr, same_data_split)
+                ##################################################
+                if self.VERBOSE:
+                    pos, neg = 0,0
+                    for j in range(len(rep_preds)):
+                        if X["race"].iloc[j] == 1:
+                            if rep_preds[j] == 0:
+                                neg +=1
+                            else:
+                                pos +=1
+                    print("race:",race_splits[i], " pos:", pos, " neg:",neg)
 
-        if repetitions!=1:
-            self.save_test_results(self._evals, dataset, bias_mit, ml_method, bias_ml_method, sensitive_attr, same_data_split)
+                ##################################################
+                self._acc_evals(evals, i)
+                self._preds.append(rep_preds)
+
+                if repetitions==1 or (self.OPT_SAVE_INTERMID in other and other[self.OPT_SAVE_INTERMID]):
+                    self.save_test_results(evals, dataset, bias_mit, ml_method, bias_ml_method, sensitive_attr, same_data_split, race_splits[i])
+
+        race_splits, splits = self._get_test_data(other)
+        for i in range(len(splits)):
+            if repetitions!=1:
+                self.save_test_results(self._evals[i], dataset, bias_mit, ml_method, bias_ml_method, sensitive_attr, same_data_split, race_splits[i])
 
     def get_last_run_preds(self): 
         return self._preds
 
     def get_last_mean_evals(self):
-        return {key: [np.average(self._evals[key])] for key in self._evals}
+        return {key: [np.average(self._evals[0][key])] for key in self._evals[0]}
 
     def get_last_data_split(self):
         # in case neded for debugging:)
         return *self._data.get_test_data(), *self._data.get_train_data()
     
-    def _acc_evals(self, evals):
-        if self._evals is None:
-            self._evals = {key:[val] for (key,val) in evals.items()}
+    def get_eval_for_each_race_split(self, metric):
+        race_splits = self._data.race_all_splits
+        out = {}
+        for i in range(len(race_splits)):
+            out[race_splits[i]] = np.average(self._evals[i][metric]) 
+        return out
+    
+    def update_training_race_split(self, new):
+        self._data.update_race_pos_label(new)
+    
+    def _get_test_data(self, other):
+        if self.OPT_ALL_RACE_SPLITS in other and other[self.OPT_ALL_RACE_SPLITS]:
+            return self._data.race_all_splits, self._data.get_all_test_data()
+        return [self._data.race_pos_label],[self._data.get_test_data()]
+
+    def _acc_evals(self, evals, i = 0):
+        if self._evals[i] is None:
+            self._evals[i] = {key:[val] for (key,val) in evals.items()}
         else:
             for (key, val) in evals.items():
-                self._evals[key].append(val)
+                self._evals[i][key].append(val)
 
     def _evaluate(self, metrics: Metrics, metric_names: List[str], sensitive_attr):
         evals = {}
@@ -160,7 +213,7 @@ class Tester:
 
     def save_test_results(self, evals: Dict[str, Any], dataset: str,
                           bias_mit: str, ml_method: str, bias_ml_method: str,
-                          sensitive_attr: List[str], same_data_split):
+                          sensitive_attr: List[str], same_data_split, race_split):
         nr_samples = np.size(list(evals.values())[0])
 
         entry = {
@@ -171,7 +224,8 @@ class Tester:
             "Bias Mitigation": [bias_mit],
             "ML method": [ml_method],
             "ML bias mit": [bias_ml_method],
-            "Sensitive attrs": [sensitive_attr]
+            "Sensitive attrs": [sensitive_attr],
+            "Race split": [race_split]
         }
 
         entry.update({key: [np.average(evals[key])] for key in evals})

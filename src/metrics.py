@@ -11,6 +11,11 @@ from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_sc
 # how do we wanna do metrics?
 
 # we can do just a simple metrcs class with all the mathy functions and then a separate evaluator class?
+def guard(nr): # to avoid div by 0
+    if nr == 0:
+        return 1e-10
+    return nr
+
 
 class Metrics:
     # All available metrics:
@@ -21,6 +26,9 @@ class Metrics:
     F1 = "f1score"
 
     #fairness metrics
+    A_AOD = "[AOD] Abs Average Odds Difference"
+    A_EOD = "[EOD] Abs Equal Opportunity Difference"
+    A_SPD = "[SPD] Abs Statistical Parity Difference"
     AOD = "[AOD] Average Odds Difference"
     EOD = "[EOD] Equal Opportunity Difference"
     SPD = "[SPD] Statistical Parity Difference"
@@ -34,6 +42,11 @@ class Metrics:
     DF = "[DF] Differential Fairness"
     DF_INV = "[DF] Differential Fairness if 0 was the positive label"
     ONE_DF = "[DF] Differential Fairness for One Attribute"
+
+    POS = "[+%] Proportion of Positive labels for the group"
+
+    A_M_EOD = "[MEOD] Abs M Equal Opportunity Difference"
+    A_M_AOD = "[MEOD] Abs M Average Odds Difference"
 
     M_EOD = "[MEOD] M Equal Opportunity Difference"
     M_AOD = "[MEOD] M Average Odds Difference"
@@ -57,9 +70,10 @@ class Metrics:
         # metrics that need a list of attributes as input to create subgroups
         return [Metrics.SF, Metrics.SF_INV, Metrics.DF, Metrics.DF_INV, Metrics.M_EOD, Metrics.M_AOD]
 
+
     def get_attribute_dependant():
         # metrics that need a single attribute as input
-        return [Metrics.AOD, Metrics.EOD, Metrics.SPD, Metrics.DI, Metrics.FR, Metrics.ONE_SF, Metrics.ONE_DF]
+        return [Metrics.POS, Metrics.A_AOD, Metrics.A_EOD, Metrics.A_SPD, Metrics.AOD, Metrics.EOD, Metrics.SPD, Metrics.DI, Metrics.FR, Metrics.ONE_SF, Metrics.ONE_DF]
 
     def get_attribute_independant():
         # metrics independant of attributes
@@ -74,6 +88,12 @@ class Metrics:
             return self.recall()
         elif metric_name == self.F1:
             return self.f1score()
+        elif metric_name == self.A_AOD:
+            return abs(self.aod(attr))
+        elif metric_name == self.A_EOD:
+            return abs(self.eod(attr))
+        elif metric_name == self.A_SPD:
+            return abs(self.spd(attr))
         elif metric_name == self.AOD:
             return self.aod(attr)
         elif metric_name == self.EOD:
@@ -98,8 +118,14 @@ class Metrics:
             return self.meod(attr)
         elif metric_name == self.M_AOD:
             return self.maod(attr)
+        elif metric_name == self.A_M_EOD:
+            return abs(self.meod(attr))
+        elif metric_name == self.A_M_AOD:
+            return abs(self.maod(attr))
         elif metric_name == self.FR:
             return self.fr(attr)
+        elif metric_name == self.POS:
+            return self.pos(attr)
         else:
             raise RuntimeError("Invalid metric name: ", metric_name)
 
@@ -107,8 +133,7 @@ class Metrics:
         return accuracy_score(self._y, self._preds)
         #return np.mean(self._y == self._preds)
 
-    # etc other metrics
-
+    
     def precision(self) -> float:
         return self._round(precision_score(self._y, self._preds))
 
@@ -117,6 +142,14 @@ class Metrics:
 
     def f1score(self) -> float:
         return self._round(f1_score(self._y, self._preds))
+
+    def pos(self, attribute) -> float:
+        total, count = 0,0
+        for i in range(len(self._y)):
+            if (self._X[attribute][i] == 1):
+                count += 1
+                total += self._preds[i]
+        return total / guard(count)
 
     def aod(self, attribute):
         for i in range(len(self._y)):
@@ -128,19 +161,12 @@ class Metrics:
         ind1 = np.where(self._X[attribute] == 1)[0]
         conf0 = self.confusionMatrix(ind0)
         conf1 = self.confusionMatrix(ind1)
-        if (conf0['tp'] + conf0['fn']) == 0:
-            tpr0 = 0
-            tpr1 = 0
-        else:
-            tpr0 = conf0['tp'] / (conf0['tp'] + conf0['fn'])
-            tpr1 = conf1['tp'] / (conf1['tp'] + conf1['fn'])
-        if (conf0['fp'] + conf0['tn']) == 0:
-            fpr0 = 0
-            fpr1 = 0
-        else:
-            fpr0 = conf0['fp'] / (conf0['fp'] + conf0['tn'])
-            fpr1 = conf1['fp'] / (conf1['fp'] + conf1['tn'])
-        return abs(self._round(0.5 * (tpr1 + fpr1 - tpr0 - fpr0)))
+        tpr0 = conf0['tp'] / guard(conf0['tp'] + conf0['fn'])
+        tpr1 = conf1['tp'] / guard(conf1['tp'] + conf1['fn'])
+        fpr0 = conf0['fp'] / guard(conf0['fp'] + conf0['tn'])
+        fpr1 = conf1['fp'] / guard(conf1['fp'] + conf1['tn'])
+        return (self._round(0.5 * (tpr1 + fpr1 - tpr0 - fpr0)))
+
 
     def eod(self, attribute) -> float:
         for i in range(len(self._y)):
@@ -152,13 +178,9 @@ class Metrics:
         ind1 = np.where(self._X[attribute] == 1)[0]
         conf0 = self.confusionMatrix(ind0)
         conf1 = self.confusionMatrix(ind1)
-        if (conf0['tp'] + conf0['fn']) == 0:
-            tpr0 = 0
-            tpr1 = 0
-        else:
-            tpr0 = conf0['tp'] / (conf0['tp'] + conf0['fn'])
-            tpr1 = conf1['tp'] / (conf1['tp'] + conf1['fn'])
-        return abs(self._round(tpr1 - tpr0))
+        tpr0 = conf0['tp'] / guard(conf0['tp'] + conf0['fn'])
+        tpr1 = conf1['tp'] / guard(conf1['tp'] + conf1['fn'])
+        return (self._round(tpr1 - tpr0))
 
     def spd(self, attribute) -> float:
         for i in range(len(self._y)):
@@ -170,15 +192,9 @@ class Metrics:
         ind1 = np.where(self._X[attribute] == 1)[0]
         conf0 = self.confusionMatrix(ind0)
         conf1 = self.confusionMatrix(ind1)
-        if len(ind0) == 0:
-            pr0 = 0
-        else:
-            pr0 = (conf0['tp']+conf0['fp']) / len(ind0)
-        if len(ind1) == 0:
-            pr1 = 0
-        else:
-            pr1 = (conf1['tp']+conf1['fp']) / len(ind1)
-        return abs(self._round(pr1 - pr0))
+        pr0 = (conf0['tp']+conf0['fp']) / guard(len(ind0))
+        pr1 = (conf1['tp']+conf1['fp']) / guard(len(ind1))
+        return (self._round(pr1 - pr0))
 
     def di(self, attribute) -> float:
         for i in range(len(self._y)):
@@ -190,27 +206,18 @@ class Metrics:
         ind1 = np.where(self._X[attribute] == 1)[0]
         conf0 = self.confusionMatrix(ind0)
         conf1 = self.confusionMatrix(ind1)
-        if len(ind0) == 0:
-            pr0 = 0
-        else:
-            pr0 = (conf0['tp']+conf0['fp']) / len(ind0)
-        if len(ind1) == 0:
-            pr1 = 0
-        else:
-            pr1 = (conf1['tp']+conf1['fp']) / len(ind1)
-        if pr0 == 0:
-            di = 0
-        else:
-            di = pr1/pr0
-        return self._round(abs(1-di))
+        pr0 = (conf0['tp']+conf0['fp']) / guard(len(ind0))
+        pr1 = (conf1['tp']+conf1['fp']) / guard(len(ind1))
+        di = pr1/guard(pr0)
+        return self._round((1-di))
 
     def fr(self, attribute):
         X_flip = self.flip_X(attribute)
         preds_flip = self._predict(X_flip)
         total = self._X.shape[0]
         same = np.count_nonzero(self._preds==preds_flip)
-        return self._round((total-same)/total)
-    
+        return self._round((total-same)/guard(total))
+
     def get_subgroup_attr_vals(self, attrs_unique_vals):
         subgroups = [[]]
         for attr_vals in attrs_unique_vals:
@@ -263,6 +270,7 @@ class Metrics:
         ans = max(math.log(ans_max), -math.log(ans_min))
         return ans
 
+
     def meod(self, attributes, a=None):
         for i in range(len(self._y)):
             group = tuple([self._X[attr][i] for attr in attributes])
@@ -270,7 +278,7 @@ class Metrics:
                 self.groups[group] = []
             self.groups[group].append(i)
         tprs = self.tprs()
-        return abs(self._round(max(tprs.values())-min(tprs.values())))
+        return (self._round(max(tprs.values())-min(tprs.values())))
 
     def maod(self, attributes, a=None):
         for i in range(len(self._y)):
@@ -279,7 +287,7 @@ class Metrics:
                 self.groups[group] = []
             self.groups[group].append(i)
         aos = self.aos()
-        return abs(self._round(max(aos.values()) - min(aos.values())))
+        return (self._round(max(aos.values()) - min(aos.values())))
 
     def confusionMatrix(self, sub=None):
         if sub is None:
@@ -305,10 +313,7 @@ class Metrics:
         for group in self.groups:
             sub = self.groups[group]
             conf = self.confusionMatrix(sub)
-            if (conf['tp'] + conf['fn']) == 0:
-                tpr = 0
-            else:
-                tpr = conf['tp'] / (conf['tp'] + conf['fn'])
+            tpr = conf['tp'] / guard(conf['tp'] + conf['fn'])
             tprs[group] = tpr
         return tprs
 
@@ -317,10 +322,7 @@ class Metrics:
         for group in self.groups:
             sub = self.groups[group]
             conf = self.confusionMatrix(sub)
-            if (conf['fp'] + conf['tn']) == 0:
-                fpr = 0
-            else:
-                fpr = conf['fp'] / (conf['fp'] + conf['tn'])
+            fpr = conf['fp'] / guard(conf['fp'] + conf['tn'])
             fprs[group] = fpr
         return fprs
 
@@ -335,10 +337,7 @@ class Metrics:
         for group in self.groups:
             sub = self.groups[group]
             conf = self.confusionMatrix(sub)
-            if len(sub) == 0:
-                pr = 0
-            else:
-                pr = (conf['tp']+conf['fp']) / len(sub)
+            pr = (conf['tp']+conf['fp']) / guard(len(sub))
             prs[group] = pr
         return prs
     
@@ -350,7 +349,8 @@ class Metrics:
             if (conf['tp']+conf['fp']+conf['tn']+conf['fn']) == 0:
                 sg = 0 
             else:
-                sg = conf['tp']/(conf['tp']+conf['fp']+conf['tn']+conf['fn'])
+                sg = conf['tp']/ guard(conf['tp']+conf['fp']+conf['tn']+conf['fn'])
+            sg = conf['fp'] / guard(conf['fp'] + conf['tn'])
             sgf[group] = sg
         return sgf
 
@@ -358,3 +358,5 @@ class Metrics:
         X_flip = self._X.copy()
         X_flip[attribute] = np.where(X_flip[attribute]==1, 0, 1)
         return X_flip
+    
+
