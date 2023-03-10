@@ -264,7 +264,12 @@ class Metrics:
                 if size1!=0 and size2!=0:
                     prob_pos1 = conf1[outcome] / size1
                     prob_pos2 = conf2[outcome] / size2
-                    ans = prob_pos1 / prob_pos2
+                    if (prob_pos1 == prob_pos2):
+                        ans = 1
+                    else:
+                        if prob_pos1==0 or prob_pos2==0:
+                            return 3 # TODO: idk what to do in this case
+                        ans = prob_pos1 / prob_pos2
                     ans_max = max(ans, ans_max)
                     ans_min = min(ans, ans_min)            
         ans = max(math.log(ans_max), -math.log(ans_min))
