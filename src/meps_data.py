@@ -29,11 +29,11 @@ class MEPSData(Data):
         # print(self._X)
         self._y = self.data['Probability'].to_numpy()
 
-        # if preprocessing == "FairBalance":
-            # self._X = self.fairbalance_columns(self._X)
+        if preprocessing == "FairBalance":
+            self._X = self.fairbalance_columns(self._X)
             # pass
-        # else:
-        self._X = self.fairmask_columns(self._X)
+        else:
+            self._X = self.fairmask_columns(self._X)
         # print(self._X)
         # Create train-test split
         self.new_data_split()
