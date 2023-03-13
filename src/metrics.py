@@ -71,7 +71,6 @@ class Metrics:
         # metrics that need a list of attributes as input to create subgroups
         return [Metrics.SF, Metrics.SF_INV, Metrics.DF, Metrics.DF_INV, Metrics.M_EOD, Metrics.M_AOD]
 
-
     def get_attribute_dependant():
         # metrics that need a single attribute as input
         return [Metrics.POS, Metrics.T_POS, Metrics.A_AOD, Metrics.A_EOD, Metrics.A_SPD, Metrics.AOD, Metrics.EOD, Metrics.SPD, Metrics.DI, Metrics.FR, Metrics.ONE_SF, Metrics.ONE_DF]

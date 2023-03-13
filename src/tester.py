@@ -81,8 +81,7 @@ class Tester:
             self._data.split_cat_cols('race')
 
         if not sensitive_attr:
-            sensitive_attr = self._data.get_sensitive_column_names()      
-        print(sensitive_attr)  
+            sensitive_attr = self._data.get_sensitive_column_names()        
 
         n_test_datas = len(self._data.race_all_splits)
         self._preds = []
@@ -157,8 +156,14 @@ class Tester:
             out[race_splits[i]] = np.average(self._evals[i][metric]) 
         return out
     
+    def get_eval(self, metric):
+        return np.average(self._evals[0][metric]) 
+        
     def update_training_race_split(self, new):
-        self._data.update_race_pos_label(new)
+        self._data.set_race_pos_label(new)
+
+    def split_race_cols(self):
+        self._data.split_cat_cols('race')
     
     def _get_test_data(self, other):
         if self.OPT_ALL_RACE_SPLITS in other and other[self.OPT_ALL_RACE_SPLITS]:

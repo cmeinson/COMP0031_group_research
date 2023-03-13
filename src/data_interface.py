@@ -27,12 +27,13 @@ class Data:
                                                                                     test_size=self._test_ratio)
         print("in test")
         print(self._X_test_cat['race'].value_counts())
-        self.update_race_pos_label(self.race_pos_label)
+        self.set_race_pos_label(self.race_pos_label)
 
-    def update_race_pos_label(self, new):
+    def set_race_pos_label(self, new):
         self.race_pos_label = new
         self._X_test = self.copy_with_bin_race(self._X_test_cat, self.race_pos_label)
         self._X_train = self.copy_with_bin_race(self._X_train_cat, self.race_pos_label)
+
 
     def get_all_test_data(self) -> List[Tuple[pd.DataFrame, np.array]]:
         out = []
