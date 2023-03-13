@@ -4,10 +4,18 @@ from typing import List, Tuple
 import numpy as np
 import pandas as pd
 
-
+"""
+African-American    3696
+Caucasian           2454
+Hispanic             637
+Other                377
+Asian                 32 (merged with Other)
+Native American       18 (merged with Other)
+""" 
 class CompasData(Data):
     race_pos_label = "Caucasian"
     race_all_splits = ["Caucasian", "Other", "Hispanic", "African-American"]
+    sensitive = ['sex', 'race']
    
     def __init__(self, preprocessing=None, test_ratio=0.2) -> None:
         """
@@ -22,16 +30,18 @@ class CompasData(Data):
         """
         self._test_ratio = test_ratio
         self.data = pd.read_csv('data/compas-scores-two-years.csv')
-
-        self.race_all_splits = ["Caucasian", "Other", "Hispanic", "African-American"]
+        
         if preprocessing == "FairBalance merge races" or preprocessing == "FairMask merge races":
             self.race_all_splits = ["Caucasian", "Other", "African-American"]
-            self.merge_races()
+            self.merge_races(["Hispanic", "Asian", "Native American"], "Other")
+        else:
+            self.race_all_splits = ["Caucasian", "Other", "Hispanic", "African-American"]
+            self.merge_races(["Asian", "Native American"], "Other")
+            
 
         # Do default preprocessing
         self.pre_processing()
            
-
         # Split into input and output
         self._X = pd.DataFrame(self.data)
         self._y = self.data['Probability'].to_numpy()
@@ -41,14 +51,8 @@ class CompasData(Data):
         else:
             self._X = self.fairmask_columns(self._X)
 
-
-
         # Create train-test split
         self.new_data_split()   
-
-    def merge_races(self, remove: List[str] = ["Hispanic", "Asian", "Native American"], into = "Other"):
-        for rem in remove:
-            self.data['race'] = np.where(self.data['race'] == rem, into, self.data['race'])
 
     def fairbalance_columns(self, X):
         return X[['sex', 'age', 'age_cat', 'race',
@@ -57,28 +61,6 @@ class CompasData(Data):
     
     def fairmask_columns(self, X):
         return X[["sex", "age_cat", "race", "priors_count", "c_charge_degree", "decile_score.1", "priors_count.1"]]
-
-    def new_data_split(self) -> None:
-        """Changes the data split"""
-        self._X_train_cat, self._X_test_cat, self._y_train, self._y_test = train_test_split(self._X, self._y,
-                                                                                    test_size=self._test_ratio)
-        self.update_race_pos_label(self.race_pos_label)
-
-    def update_race_pos_label(self, new):
-        self.race_pos_label = new
-        self._X_test = self.copy_with_bin_race(self._X_test_cat, self.race_pos_label)
-        self._X_train = self.copy_with_bin_race(self._X_train_cat, self.race_pos_label)
-
-    def get_all_test_data(self) -> List[Tuple[pd.DataFrame, np.array]]:
-        out = []
-        for l in self.race_all_splits:
-            out.append((self.copy_with_bin_race(self._X_test_cat, l), self._y_test.copy()))
-        return out
-
-    def copy_with_bin_race(self, X, pos_label):
-        X_new = X.copy()
-        X_new['race'] = np.where(X_new['race'] != pos_label, 0, 1)
-        return X_new
 
     def pre_processing(self):
         # preprocessing done according to preprocessing.ipynb
@@ -103,17 +85,3 @@ class CompasData(Data):
         self.data.rename(index=str, columns={"two_year_recid": "Probability"}, inplace=True)
         self.data['Probability'] = np.where(self.data['Probability'] == 0, 1, 0)
 
-    def get_sensitive_column_names(self) -> List[str]:
-        """
-        :return: column names (in the X above) of all sensitive attributes in the given dataset
-        :rtype: List[str]
-        """
-        # returns a list of names
-        return ['sex', 'race'] # For now removed the age cause it eas not used in a ny papers so not relevant in replication ['sex', 'age_cat', 'race']
-        # raise NotImplementedError
-
-    # def transform(self): # LATER
-    #    # will probably rename later. but something for merging attributes into binary ones?
-    #    raise NotImplementedError
-
-# compas = CompasData()

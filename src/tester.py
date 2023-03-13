@@ -17,6 +17,7 @@ class Tester:
     VERBOSE = True
     OPT_SAVE_INTERMID = "save intermediate results to file"
     OPT_ALL_RACE_SPLITS = "evaluate fairness for each race split separately"
+    OPT_SPLIT_RACE_COLS = "create a separate race column for each category"
 
     # Avalable datasets for testing:
     ADULT_D = "Adult Dataset"
@@ -76,8 +77,12 @@ class Tester:
         model = self._get_model(bias_mit, other)
         self._data = self._get_dataset(dataset,data_preprocessing)
 
+        if self.OPT_SPLIT_RACE_COLS in other and other[self.OPT_SPLIT_RACE_COLS]:
+            self._data.split_cat_cols('race')
+
         if not sensitive_attr:
-            sensitive_attr = self._data.get_sensitive_column_names()
+            sensitive_attr = self._data.get_sensitive_column_names()      
+        print(sensitive_attr)  
 
         n_test_datas = len(self._data.race_all_splits)
         self._preds = []

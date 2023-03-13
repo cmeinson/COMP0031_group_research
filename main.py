@@ -3,11 +3,13 @@ from src import *
 
 # Just an example for now
 
-
+Tester.VERBOSE = False
 n_repetitions = 1
-same_data_split = False
+same_data_split = True
 results_filename = "refactor"
-other = {Tester.OPT_SAVE_INTERMID: False, Tester.OPT_ALL_RACE_SPLITS: False}
+other = {Tester.OPT_SAVE_INTERMID: False, 
+         Tester.OPT_ALL_RACE_SPLITS: False,
+         Tester.OPT_SPLIT_RACE_COLS: True}
 
 other_fb = other.copy()
 other_fb[BaseModel.OPT_FBALANCE] = True
@@ -15,9 +17,9 @@ other_fb[BaseModel.OPT_FBALANCE] = True
 datasets =  [Tester.COMPAS_D, Tester.ADULT_D]
 
 mls = [(Tester.BASE_ML, Model.LG_R, None, "FairBalance", other_fb), 
-       #(Tester.FAIRBALANCE, Model.LG_R, None, "FairBalance", other_fb), 
+       (Tester.FAIRBALANCE, Model.LG_R, None, "FairBalance", other_fb), 
 
-       (Tester.BASE_ML, Model.RF_C, None, None, other), 
+       #(Tester.BASE_ML, Model.RF_C, None, None, other), 
        #(Tester.FAIRMASK, Model.RF_C, Model.DT_R, None, other)
 ]
 metric_names = Metrics.get_all_names()
