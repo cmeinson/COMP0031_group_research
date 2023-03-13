@@ -81,9 +81,10 @@ class FairMaskModel(Model):
         for attr in self._sensitive: 
             mask_model = self._mask_models[attr]
             mask = mask_model.predict(X_non_sens)
-            if not self._is_regression(self._method_bias): # if a classifier
+            if self._is_regression(self._method_bias): # if regression
                 mask = np.where(mask >= threshold, 1, 0) # substitute to the reg2clf function
-            X_out.loc[:, attr] = mask
+            X_out[attr] = mask
+
     
         return X_out
 
