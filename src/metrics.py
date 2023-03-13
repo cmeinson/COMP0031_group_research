@@ -33,7 +33,7 @@ class Metrics:
     EOD = "[EOD] Equal Opportunity Difference"
     SPD = "[SPD] Statistical Parity Difference"
     DI = "[DI] Disparate Impact"
-    FR = "[FR] Flip Rate"
+    FR = "[FR] Flip Rate" #8
 
     SF = "[SF] Statistical Parity Subgroup Fairness"
     SF_INV = "[SF] Statistical Parity Subgroup Fairness if 0 was the positive label"
@@ -41,15 +41,16 @@ class Metrics:
 
     DF = "[DF] Differential Fairness"
     DF_INV = "[DF] Differential Fairness if 0 was the positive label"
-    ONE_DF = "[DF] Differential Fairness for One Attribute"
+    ONE_DF = "[DF] Differential Fairness for One Attribute" #10
 
     POS = "[+%] Proportion of Positive labels for the group"
+    T_POS = "[+%] Proportion of Positive true labels for the group"
 
     A_M_EOD = "[MEOD] Abs M Equal Opportunity Difference"
     A_M_AOD = "[MEOD] Abs M Average Odds Difference"
 
     M_EOD = "[MEOD] M Equal Opportunity Difference"
-    M_AOD = "[MEOD] M Average Odds Difference"
+    M_AOD = "[MEOD] M Average Odds Difference" #12
 
     warnings.simplefilter("ignore")
 
@@ -73,8 +74,8 @@ class Metrics:
 
     def get_attribute_dependant():
         # metrics that need a single attribute as input
-        return [Metrics.POS, Metrics.A_AOD, Metrics.A_EOD, Metrics.A_SPD, Metrics.AOD, Metrics.EOD, Metrics.SPD, Metrics.DI, Metrics.FR, Metrics.ONE_SF, Metrics.ONE_DF]
-
+        return [Metrics.POS, Metrics.T_POS, Metrics.A_AOD, Metrics.A_EOD, Metrics.A_SPD, Metrics.AOD, Metrics.EOD, Metrics.SPD, Metrics.DI, Metrics.FR, Metrics.ONE_SF, Metrics.ONE_DF]
+    
     def get_attribute_independant():
         # metrics independant of attributes
         return [Metrics.ACC, Metrics.PRE, Metrics.REC, Metrics.F1]
@@ -126,6 +127,8 @@ class Metrics:
             return self.fr(attr)
         elif metric_name == self.POS:
             return self.pos(attr)
+        elif metric_name == self.T_POS:
+            return self.true_pos(attr)
         else:
             raise RuntimeError("Invalid metric name: ", metric_name)
 
@@ -143,6 +146,14 @@ class Metrics:
     def f1score(self) -> float:
         return self._round(f1_score(self._y, self._preds))
 
+    def true_pos(self, attribute) -> float:
+        total, count = 0,0
+        for i in range(len(self._y)):
+            if (self._X[attribute][i] == 1):
+                count += 1
+                total += self._y[i]
+        return total / guard(count)
+    
     def pos(self, attribute) -> float:
         total, count = 0,0
         for i in range(len(self._y)):
