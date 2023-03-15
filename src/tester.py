@@ -12,6 +12,7 @@ from .metrics import Metrics
 from typing import List, Dict, Any
 from .fairbalance import FairBalanceModel
 from .fairmask import FairMaskModel
+from .reweighing import ReweighingModel
 
 class Tester:
     OPT_SAVE_INTERMID = "save intermediate results to file"
@@ -26,6 +27,7 @@ class Tester:
     # Available bias mitigation methods
     FAIRBALANCE = "FairBalance Bias Mitigation"
     FAIRMASK = "FairMask Bias Mitigation"
+    REWEIGHING = "Reweighing Bias Mitigation"
     BASE_ML = "No Bias Mitigation"
 
     def __init__(self, output_file) -> None:
@@ -155,6 +157,8 @@ class Tester:
             return FairBalanceModel(other)
         elif name == self.BASE_ML:
             return BaseModel(other)
+        elif name == self.REWEIGHING:
+            return ReweighingModel(other)
         else:
             raise RuntimeError("Incorrect method name ", name)
 
