@@ -82,17 +82,21 @@ class Tester:
 
         if not sensitive_attr:
             sensitive_attr = self._data.get_sensitive_column_names()        
-
+        
         n_test_datas = len(self._data.race_all_splits)
         self._preds = []
         self._evals = [None for _ in range(n_test_datas)]
 
         for _ in range(repetitions):
-            if not same_data_split: self._data.new_data_split()
+            if not same_data_split: 
+                self._data.new_data_split()
+                if self.OPT_SPLIT_RACE_COLS in other and other[self.OPT_SPLIT_RACE_COLS]:
+                    self._data.split_cat_cols('race')
 
             # TRAIN
             X, y = self._data.get_train_data()
             model.train(X, y, sensitive_attr, ml_method, bias_ml_method, other)
+
 
             # EVALUATE
             X, y = self._data.get_test_data()

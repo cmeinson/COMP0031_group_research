@@ -46,6 +46,12 @@ class Metrics:
     POS = "[+%] Proportion of Positive labels for the group"
     T_POS = "[+%] Proportion of Positive true labels for the group"
 
+    POS_SEX0 = "[s0 +%] Proportion of Positive labels for the group where sex is 0"
+    T_POS_SEX0 = "[s0 +%] Proportion of Positive true labels for the group where sex is 0"
+
+    POS_SEX1 = "[s1 +%] Proportion of Positive labels for the group where sex is 1"
+    T_POS_SEX1 = "[s1 +%] Proportion of Positive true labels for the group where sex is 1"
+
     A_M_EOD = "[MEOD] Abs M Equal Opportunity Difference"
     A_M_AOD = "[MEOD] Abs M Average Odds Difference"
 
@@ -73,7 +79,7 @@ class Metrics:
 
     def get_attribute_dependant():
         # metrics that need a single attribute as input
-        return [Metrics.POS, Metrics.T_POS, Metrics.A_AOD, Metrics.A_EOD, Metrics.A_SPD, Metrics.AOD, Metrics.EOD, Metrics.SPD, Metrics.DI, Metrics.FR, Metrics.ONE_SF, Metrics.ONE_DF]
+        return [Metrics.POS, Metrics.T_POS, Metrics.POS_SEX0, Metrics.T_POS_SEX0, Metrics.POS_SEX1, Metrics.T_POS_SEX1, Metrics.A_AOD, Metrics.A_EOD, Metrics.A_SPD, Metrics.AOD, Metrics.EOD, Metrics.SPD, Metrics.DI, Metrics.FR, Metrics.ONE_SF, Metrics.ONE_DF]
     
     def get_attribute_independant():
         # metrics independant of attributes
@@ -128,6 +134,14 @@ class Metrics:
             return self.pos(attr)
         elif metric_name == self.T_POS:
             return self.true_pos(attr)
+        elif metric_name == self.POS_SEX0:
+            return self.pos(attr,1)
+        elif metric_name == self.T_POS_SEX0:
+            return self.true_pos(attr,1)
+        elif metric_name == self.POS_SEX1:
+            return self.pos(attr,0)
+        elif metric_name == self.T_POS_SEX1:
+            return self.true_pos(attr,0)
         else:
             raise RuntimeError("Invalid metric name: ", metric_name)
 
@@ -144,19 +158,19 @@ class Metrics:
 
     def f1score(self) -> float:
         return self._round(f1_score(self._y, self._preds))
-
-    def true_pos(self, attribute) -> float:
+    
+    def true_pos(self, attribute, not_sex = None) -> float:
         total, count = 0,0
         for i in range(len(self._y)):
-            if (self._X[attribute][i] == 1):
+            if (self._X[attribute][i] == 1 and self._X['sex'][i] != not_sex):
                 count += 1
                 total += self._y[i]
         return total / guard(count)
     
-    def pos(self, attribute) -> float:
+    def pos(self, attribute, not_sex = None) -> float:
         total, count = 0,0
         for i in range(len(self._y)):
-            if (self._X[attribute][i] == 1):
+            if (self._X[attribute][i] == 1 and self._X['sex'][i] != not_sex):
                 count += 1
                 total += self._preds[i]
         return total / guard(count)

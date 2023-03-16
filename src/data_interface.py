@@ -21,13 +21,21 @@ class Data:
         """
         raise NotImplementedError
     
+    def _all_races_in_test_and_train(self):
+        if (self._X_test_cat is None): return False
+        return set(self._X_test_cat['race'].unique()) == set(self._X_train_cat['race'].unique())
+    
     def new_data_split(self) -> None:
         """Changes the data split"""
-        self._X_train_cat, self._X_test_cat, self._y_train, self._y_test = train_test_split(self._X, self._y,
+        self._X_test_cat = None
+        self._X_train_cat = None
+        while (not self._all_races_in_test_and_train()): # to avoid crashing tests
+            self._X_train_cat, self._X_test_cat, self._y_train, self._y_test = train_test_split(self._X, self._y,
                                                                                     test_size=self._test_ratio)
-        print("in test")
-        print(self._X_test_cat['race'].value_counts())
+        #print("in test")
+        #print(self._X_test_cat['race'].value_counts())
         self.set_race_pos_label(self.race_pos_label)
+
 
     def set_race_pos_label(self, new):
         self.race_pos_label = new
@@ -51,10 +59,10 @@ class Data:
             self.data['race'] = np.where(self.data['race'] == rem, into, self.data['race'])
 
     def split_cat_cols(self, attr):
+        cats = self.data.dropna()[attr].unique()
+        self._X_test = self._split_col(attr, cats, self._X_test_cat)
+        self._X_train = self._split_col(attr, cats, self._X_train_cat)
         if attr in self.sensitive:
-            cats = self.data.dropna()[attr].unique()
-            self._X_test = self._split_col(attr, cats, self._X_test_cat)
-            self._X_train = self._split_col(attr, cats, self._X_train_cat)
             self.sensitive = list(set(self.sensitive) - set([attr])) + list(cats)
         
     def _split_col(self, attr, cats, X):
