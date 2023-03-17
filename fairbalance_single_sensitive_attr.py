@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 Testing the performance in mitigating bias with a single protected attribute at a time 
 vs multiple protected attributes
 """
-n_repetitions = 5
+n_repetitions = 50
 same_data_split = True
 results_filename = "fairbalance_single_attr"
 other = {Tester.OPT_SAVE_INTERMID: False}

@@ -1,0 +1,7 @@
+Dataset,Bias Mitigation,Accuracy,F1score,MEOD,MAOD
+Compas,Reweighing,0.66,0.71,0.17,0.11
+Compas ,FairBalance,0.68,0.70,0.07,0.07
+Compas,Base Model,0.68,0.73,0.24,0.36
+Adult,Reweighing,0.85,0.64,0.15,0.06
+Adult ,FairBalance,0.81,0.67,0.06,0.04
+Adult,Base Model,0.85,0.66,0.18,0.14
