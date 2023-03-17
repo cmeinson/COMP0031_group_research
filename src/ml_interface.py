@@ -5,7 +5,7 @@ import pandas as pd
 from sklearn.neural_network import MLPClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier , GradientBoostingClassifier, GradientBoostingRegressor
 from sklearn.naive_bayes import GaussianNB
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeRegressor,DecisionTreeClassifier
@@ -15,6 +15,10 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.compose import make_column_selector as selector
 from sklearn.compose import ColumnTransformer
+
+# import xgboost as xgb
+# import lightgbm as lgb
+# import catboost as cb
 
 class Model:
     # NB: if ur implementation of the class takes more than one file pls put it all into sub folder
@@ -26,6 +30,7 @@ class Model:
     SV_C = "SupportVectorClassifier"
     NN_C = "MLPClassifier"
     NB_C = "NaiveBayes"
+    GB_C = "GradientBoostingClassifier"
 
     def __init__(self, other: Dict[str, Any] = {}) -> None:
         """Idk does not really do much yet I think:)
@@ -50,8 +55,12 @@ class Model:
             return RandomForestClassifier()
         elif method == self.DT_C:
             return DecisionTreeClassifier()
+        elif method == self.GB_C:
+            return GradientBoostingClassifier()
         elif method == self.DT_R:
             return DecisionTreeRegressor()
+        elif method == self.GB_R:
+            return GradientBoostingRegressor()
         elif method == self.LG_R:
             return LogisticRegression(max_iter=100000)
         else:

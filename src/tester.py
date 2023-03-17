@@ -1,4 +1,6 @@
 from os import path
+from joblib import PrintTime
+from matplotlib.backend_bases import MouseEvent
 import pandas as pd
 import numpy as np
 from .data_interface import Data, DummyData
@@ -10,6 +12,7 @@ from .metrics import Metrics
 from typing import List, Dict, Any
 from .fairbalance import FairBalanceModel
 from .fairmask import FairMaskModel
+from src import fairmask
 
 class Tester:
     OPT_SAVE_INTERMID = "save intermediate results to file"
@@ -30,6 +33,16 @@ class Tester:
         self._preds = None
         self._evals = None
         self._data = None
+
+    def test_different_ml_methods(self, metric_names: List[str], 
+                 repetitions = 1, same_data_split = False,
+                 data_preprocessing: str = None, sensitive_attr: List[str] = None, other={}):
+        ml_methods_for_testing = [Model.DT_C, Model.RF_C , Model.KN_C, Model.SV_C, Model.NN_C, Model.NB_C, Model.GB_C]
+        datasets =  [Tester.ADULT_D, Tester.COMPAS_D]
+        for method1 in ml_methods_for_testing:
+            for method2 in ml_methods_for_testing:
+                for dataset in datasets:
+                    self.run_test(metric_names, dataset, Tester.FAIRMASK, method1, method2, repetitions, same_data_split, data_preprocessing, sensitive_attr, other)
 
     def run_test(self, metric_names: List[str], dataset: str, 
                  bias_mit: str, ml_method: str, bias_ml_method: str = None, 
