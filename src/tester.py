@@ -8,7 +8,7 @@ from .adult_data import AdultData
 from .meps_data import MEPSData
 from .german_data import GermanData
 from .ml_interface import Model, BaseModel
-from .metrics import Metrics
+from .metrics import Metrics, MetricException
 from typing import List, Dict, Any
 from .fairbalance import FairBalanceModel
 from .fairmask import FairMaskModel
@@ -32,6 +32,7 @@ class Tester:
     BASE_ML = "No Bias Mitigation"
 
     def __init__(self, output_file) -> None:
+        self._exceptions = []
         self._initd_data = {}
         self._file = output_file
         self._preds = None
@@ -73,6 +74,7 @@ class Tester:
         :return: Used testing X and y, along with all the predictions
         :rtype: pd.DataFrame, np.array, List[np.array]
         """
+        self._exceptions = []
         
         model = self._get_model(bias_mit, other)
         self._data = self._get_dataset(dataset,data_preprocessing)
@@ -87,7 +89,8 @@ class Tester:
         self._preds = []
         self._evals = [None for _ in range(n_test_datas)]
 
-        for _ in range(repetitions):
+        rep = 0
+        while (rep < repetitions):
             if not same_data_split: 
                 self._data.new_data_split()
                 if self.OPT_SPLIT_RACE_COLS in other and other[self.OPT_SPLIT_RACE_COLS]:
@@ -118,25 +121,29 @@ class Tester:
             for i in range(len(splits)):
                 X, y = splits[i]
                 # NB: FLIPRATE DOES NOT WORK WITH MY EXPERIMENTS
-                evals = self._evaluate(Metrics(X, y, rep_preds, predict), metric_names, sensitive_attr)
+                try:
+                    evals = self._evaluate(Metrics(X, y, rep_preds, predict), metric_names, sensitive_attr)
+                except MetricException as e:
+                    print("invalid metric on rep ", rep, " split ", i , e)
+                else:
+                    rep += 1
+                    ##################################################
+                    if self.VERBOSE:
+                        pos, neg = 0,0
+                        for j in range(len(rep_preds)):
+                            if X["race"].iloc[j] == 1:
+                                if rep_preds[j] == 0:
+                                    neg +=1
+                                else:
+                                    pos +=1
+                        print("race:",race_splits[i], " pos:", pos, " neg:",neg)
 
-                ##################################################
-                if self.VERBOSE:
-                    pos, neg = 0,0
-                    for j in range(len(rep_preds)):
-                        if X["race"].iloc[j] == 1:
-                            if rep_preds[j] == 0:
-                                neg +=1
-                            else:
-                                pos +=1
-                    print("race:",race_splits[i], " pos:", pos, " neg:",neg)
+                    ##################################################
+                    self._acc_evals(evals, i)
+                    self._preds.append(rep_preds)
 
-                ##################################################
-                self._acc_evals(evals, i)
-                self._preds.append(rep_preds)
-
-                if repetitions==1 or (self.OPT_SAVE_INTERMID in other and other[self.OPT_SAVE_INTERMID]):
-                    self.save_test_results(evals, dataset, bias_mit, ml_method, bias_ml_method, sensitive_attr, same_data_split, race_splits[i])
+                    if repetitions==1 or (self.OPT_SAVE_INTERMID in other and other[self.OPT_SAVE_INTERMID]):
+                        self.save_test_results(evals, dataset, bias_mit, ml_method, bias_ml_method, sensitive_attr, same_data_split, race_splits[i])
 
         race_splits, splits = self._get_test_data(other)
         for i in range(len(splits)):
@@ -162,6 +169,9 @@ class Tester:
     
     def get_eval(self, metric):
         return np.average(self._evals[0][metric]) 
+    
+    def get_exceptions(self):
+        return self._exceptions
         
     def update_training_race_split(self, new):
         self._data.set_race_pos_label(new)
@@ -184,13 +194,17 @@ class Tester:
     def _evaluate(self, metrics: Metrics, metric_names: List[str], sensitive_attr):
         evals = {}
         for name in metric_names:
-            if name in Metrics.get_subgroup_dependant():
-                evals[name] = (metrics.get(name, sensitive_attr))
-            elif name in Metrics.get_attribute_dependant():
-                for attr in sensitive_attr:
-                    evals[attr + '|' + name] = (metrics.get(name, attr))
-            else:
-                evals[name] = (metrics.get(name))
+            try:
+                if name in Metrics.get_subgroup_dependant():
+                    evals[name] = (metrics.get(name, sensitive_attr))
+                elif name in Metrics.get_attribute_dependant():
+                    for attr in sensitive_attr:
+                        evals[attr + '|' + name] = (metrics.get(name, attr))
+                else:
+                    evals[name] = (metrics.get(name))
+            except MetricException as e:
+                self._exceptions.append([e,name])
+                raise e
         return evals
 
     def _get_dataset(self, name:str, preprocessing:str) -> Data:

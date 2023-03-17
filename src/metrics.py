@@ -16,8 +16,11 @@ def guard(nr): # to avoid div by 0
         return 1e-10
     return nr
 
+class MetricException(Exception):
+    pass
 
 class Metrics:
+    
     # All available metrics:
     #performance metrics
     ACC = "accuracy"
@@ -36,11 +39,11 @@ class Metrics:
     FR = "[FR] Flip Rate" #8
 
     SF = "[SF] Statistical Parity Subgroup Fairness"
-    SF_INV = "[SF] Statistical Parity Subgroup Fairness if 0 was the positive label"
+    SF_INV = "[SF INV] Statistical Parity Subgroup Fairness if 0 was the positive label"
     ONE_SF = "[SF] Statistical Parity Subgroup Fairness for One Attribute"
 
     DF = "[DF] Differential Fairness"
-    DF_INV = "[DF] Differential Fairness if 0 was the positive label"
+    DF_INV = "[DF INV] Differential Fairness if 0 was the positive label"
     ONE_DF = "[DF] Differential Fairness for One Attribute" #10
 
     POS = "[+%] Proportion of Positive labels for the group"
@@ -232,6 +235,11 @@ class Metrics:
         conf1 = self.confusionMatrix(ind1)
         pr0 = (conf0['tp']+conf0['fp']) / guard(len(ind0))
         pr1 = (conf1['tp']+conf1['fp']) / guard(len(ind1))
+        if pr1==0:
+            return 1
+        if pr0 == 0:
+            print("DI fail")
+            raise MetricException("DI fail", attribute)
         di = pr1/guard(pr0)
         return self._round((1-di))
 
@@ -292,7 +300,9 @@ class Metrics:
                         ans = 1
                     else:
                         if prob_pos1==0 or prob_pos2==0:
-                            return 3 # TODO: idk what to do in this case
+                            print("DF fail")
+                            raise MetricException("DF fail", attributes)
+                            return 333 # TODO: idk what to do in this case
                         ans = prob_pos1 / prob_pos2
                     ans_max = max(ans, ans_max)
                     ans_min = min(ans, ans_min)            
