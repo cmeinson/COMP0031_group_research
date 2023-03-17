@@ -9,7 +9,8 @@ from collections import defaultdict
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
 
 # how do we wanna do metrics?
-
+class MetricException(Exception):
+    pass
 # we can do just a simple metrcs class with all the mathy functions and then a separate evaluator class?
 
 class Metrics:
@@ -190,19 +191,16 @@ class Metrics:
         ind1 = np.where(self._X[attribute] == 1)[0]
         conf0 = self.confusionMatrix(ind0)
         conf1 = self.confusionMatrix(ind1)
-        if len(ind0) == 0:
-            pr0 = 0
-        else:
-            pr0 = (conf0['tp']+conf0['fp']) / len(ind0)
-        if len(ind1) == 0:
-            pr1 = 0
-        else:
-            pr1 = (conf1['tp']+conf1['fp']) / len(ind1)
+        if len(ind0) == 0 or len(ind1)==0:
+            raise MetricException("DI fail attribute has only 1 val", attribute)
+        pr0 = (conf0['tp']+conf0['fp']) / len(ind0)
+        pr1 = (conf1['tp']+conf1['fp']) / len(ind1)
+        if pr1==0:
+            return 0
         if pr0 == 0:
-            di = 0
-        else:
-            di = pr1/pr0
-        return self._round(abs(1-di))
+            raise MetricException("DI fail pr0 = 0", attribute)
+        di = pr1/pr0
+        return self._round(di)
 
     def fr(self, attribute):
         X_flip = self.flip_X(attribute)
@@ -257,7 +255,12 @@ class Metrics:
                 if size1!=0 and size2!=0:
                     prob_pos1 = conf1[outcome] / size1
                     prob_pos2 = conf2[outcome] / size2
-                    ans = prob_pos1 / prob_pos2
+                    if (prob_pos1 == prob_pos2):
+                        ans = 1
+                    else:
+                        if prob_pos1==0 or prob_pos2==0:            
+                            raise MetricException("DF fail", attributes)
+                        ans = prob_pos1 / prob_pos2
                     ans_max = max(ans, ans_max)
                     ans_min = min(ans, ans_min)            
         ans = max(math.log(ans_max), -math.log(ans_min))
