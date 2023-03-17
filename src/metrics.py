@@ -240,8 +240,8 @@ class Metrics:
         if pr0 == 0:
             print("DI fail")
             raise MetricException("DI fail", attribute)
-        di = pr1/guard(pr0)
-        return self._round((1-di))
+        di = pr1/pr0
+        return self._round(di)
 
     def fr(self, attribute):
         X_flip = self.flip_X(attribute)
