@@ -195,11 +195,11 @@ class Metrics:
             raise MetricException("DI fail attribute has only 1 val", attribute)
         pr0 = (conf0['tp']+conf0['fp']) / len(ind0)
         pr1 = (conf1['tp']+conf1['fp']) / len(ind1)
-        if pr1==0:
+        if pr0==0:
             return 0
-        if pr0 == 0:
-            raise MetricException("DI fail pr0 = 0", attribute)
-        di = pr1/pr0
+        if pr1 == 0:
+            raise MetricException("DI fail pr1 = 0", attribute)
+        di = pr0/pr1
         return self._round(di)
 
     def fr(self, attribute):
