@@ -26,6 +26,7 @@ class Metrics:
     EOD = "[EOD] Equal Opportunity Difference"
     SPD = "[SPD] Statistical Parity Difference"
     DI = "[DI] Disparate Impact"
+    DI_FM = "[DI_FM] Disparate Impact the way it was implemented in FairMask"
     FR = "[FR] Flip Rate"
 
     SF = "[SF] Statistical Parity Subgroup Fairness"
@@ -60,7 +61,7 @@ class Metrics:
 
     def get_attribute_dependant():
         # metrics that need a single attribute as input
-        return [Metrics.AOD, Metrics.EOD, Metrics.SPD, Metrics.DI, Metrics.FR, Metrics.ONE_SF, Metrics.ONE_DF]
+        return [Metrics.AOD, Metrics.EOD, Metrics.SPD, Metrics.DI, Metrics.DI_FM, Metrics.FR, Metrics.ONE_SF, Metrics.ONE_DF,]
 
     def get_attribute_independant():
         # metrics independant of attributes
@@ -83,6 +84,8 @@ class Metrics:
             return self.spd(attr)
         elif metric_name == self.DI:
             return self.di(attr)
+        elif metric_name == self.DI_FM:
+            return self.di_fm(attr)
         elif metric_name == self.SF:
             return self.sf(attr)
         elif metric_name == self.SF_INV:
@@ -201,6 +204,27 @@ class Metrics:
             raise MetricException("DI fail pr1 = 0", attribute)
         di = pr0/pr1
         return self._round(di)
+    
+    def di_fm(self, attribute) -> float:
+        for i in range(len(self._y)):
+            group = tuple([self._X[attribute][i]])
+            if group not in self.groups:
+                self.groups[group] = []
+            self.groups[group].append(i)
+        ind0 = np.where(self._X[attribute] == 0)[0]
+        ind1 = np.where(self._X[attribute] == 1)[0]
+        conf0 = self.confusionMatrix(ind0)
+        conf1 = self.confusionMatrix(ind1)
+        if len(ind0) == 0 or len(ind1)==0:
+            raise MetricException("DI fail attribute has only 1 val", attribute)
+        pr0 = (conf0['tp']+conf0['fp']) / len(ind0)
+        pr1 = (conf1['tp']+conf1['fp']) / len(ind1)
+        if pr1==0:
+            return 0
+        if pr0 == 0:
+            raise MetricException("DI fm fail pr0 = 0", attribute)
+        di = pr1/pr0
+        return self._round(abs(1-di))
 
     def fr(self, attribute):
         X_flip = self.flip_X(attribute)
