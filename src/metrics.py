@@ -233,14 +233,15 @@ class Metrics:
         ind1 = np.where(self._X[attribute] == 1)[0]
         conf0 = self.confusionMatrix(ind0)
         conf1 = self.confusionMatrix(ind1)
-        pr0 = (conf0['tp']+conf0['fp']) / guard(len(ind0))
-        pr1 = (conf1['tp']+conf1['fp']) / guard(len(ind1))
-        if pr1==0:
-            return 1
+        if len(ind0) == 0 or len(ind1)==0:
+            raise MetricException("DI fail attribute has only 1 val", attribute)
+        pr0 = (conf0['tp']+conf0['fp']) / len(ind0)
+        pr1 = (conf1['tp']+conf1['fp']) / len(ind1)
         if pr0 == 0:
-            print("DI fail")
-            raise MetricException("DI fail", attribute)
-        di = pr1/pr0
+            return 0
+        if pr1 == 0:
+            raise MetricException("DI fail pr1 = 0", attribute)
+        di = pr0/pr1
         return self._round(di)
 
     def fr(self, attribute):
@@ -302,7 +303,6 @@ class Metrics:
                         if prob_pos1==0 or prob_pos2==0:
                             print("DF fail")
                             raise MetricException("DF fail", attributes)
-                            return 333 # TODO: idk what to do in this case
                         ans = prob_pos1 / prob_pos2
                     ans_max = max(ans, ans_max)
                     ans_min = min(ans, ans_min)            

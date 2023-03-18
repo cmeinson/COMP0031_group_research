@@ -118,15 +118,19 @@ class Tester:
                 print(self._data.race_pos_label," pos:", pos, " neg:",neg)
 
             ##################################################
-            for i in range(len(splits)):
-                X, y = splits[i]
-                # NB: FLIPRATE DOES NOT WORK WITH MY EXPERIMENTS
-                try:
+            try:
+                for i in range(len(splits)):
+                    X, y = splits[i]
                     evals = self._evaluate(Metrics(X, y, rep_preds, predict), metric_names, sensitive_attr)
-                except MetricException as e:
-                    print("invalid metric on rep ", rep, " split ", i , e)
-                else:
-                    rep += 1
+            except MetricException as e:
+                print("invalid metric on rep ", rep, " split ", i , e)
+            else:
+                rep += 1
+                for i in range(len(splits)):
+                    X, y = splits[i]
+                    # NB: FLIPRATE DOES NOT WORK WITH MY EXPERIMENTS
+                    evals = self._evaluate(Metrics(X, y, rep_preds, predict), metric_names, sensitive_attr)
+                    
                     ##################################################
                     if self.VERBOSE:
                         pos, neg = 0,0
