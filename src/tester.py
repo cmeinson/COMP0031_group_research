@@ -1,4 +1,5 @@
 from os import path
+import time
 from joblib import PrintTime
 from matplotlib.backend_bases import MouseEvent
 import pandas as pd
@@ -87,6 +88,7 @@ class Tester:
         self._evals = None
 
         for _ in range(repetitions):
+            start = time.time()
             if not same_data_split: self._data.new_data_split()
             
             X, y = self._data.get_train_data()
@@ -95,6 +97,8 @@ class Tester:
             X, y = self._data.get_test_data()
             predict = lambda x: model.predict(x.copy(), other)
             rep_preds = predict(X)
+            end = time.time()
+            
             evals = self._evaluate(Metrics(X, y, rep_preds, predict), metric_names, sensitive_attr)
 
             self._acc_evals(evals)
@@ -105,6 +109,8 @@ class Tester:
 
         if repetitions!=1:
             self.save_test_results(self._evals, dataset, bias_mit, ml_method, bias_ml_method, sensitive_attr, same_data_split)
+
+        return start-end,evals
 
     def get_last_run_preds(self): 
         return self._preds
