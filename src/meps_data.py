@@ -39,13 +39,13 @@ class MEPSData(Data):
         self.new_data_split()
 
     def fairbalance_columns(self, X):
-        return X[["REGION", "AGE", "sex", "race", "MARRY", "FTSTU", "ACTDTY", "HONRDC", "RTHLTH", "MNHLTH", "HIBPDX",
+        return X[["REGION", "age", "sex", "race", "MARRY", "FTSTU", "ACTDTY", "HONRDC", "RTHLTH", "MNHLTH", "HIBPDX",
                   "CHDDX", "ANGIDX", "MIDX", "OHRTDX", "STRKDX", "EMPHDX", "CHBRON", "CHOLDX", "CANCERDX", "DIABDX",
                   "JTPAIN", "ARTHDX", "ARTHTYPE", "ASTHDX", "ADHDADDX", "PREGNT", "WLKLIM", "ACTLIM", "SOCLIM",
                   "COGLIM", "DFHEAR42", "DFSEE42", "ADSMOK42", "PCS42", "MCS42", "K6SUM42", "PHQ242", "EMPST", "POVCAT", "INSCOV","PERWT15F"]]
 
     def fairmask_columns(self, X):
-        return X[["REGION", "AGE", "sex", "race", "MARRY", "FTSTU", "ACTDTY", "HONRDC", "RTHLTH", "MNHLTH", "HIBPDX",
+        return X[["REGION", "age", "sex", "race", "MARRY", "FTSTU", "ACTDTY", "HONRDC", "RTHLTH", "MNHLTH", "HIBPDX",
                   "CHDDX", "ANGIDX", "MIDX", "OHRTDX", "STRKDX", "EMPHDX", "CHBRON", "CHOLDX", "CANCERDX", "DIABDX",
                   "JTPAIN", "ARTHDX", "ARTHTYPE", "ASTHDX", "ADHDADDX", "PREGNT", "WLKLIM", "ACTLIM", "SOCLIM", "COGLIM",
                   "DFHEAR42", "DFSEE42", "ADSMOK42", "PCS42", "MCS42", "K6SUM42", "PHQ242", "EMPST", "POVCAT", "INSCOV", "PERWT15F"]]
@@ -79,6 +79,7 @@ class MEPSData(Data):
         self.data = self.data.rename(columns={"RACEV2X": "RACE"})
 
         self.data['SEX'] = np.where(self.data['SEX'] != 1, 0, self.data['SEX'])
+        self.data['AGE'] = np.where(self.data['AGE'] >= 25, 1, 0)
 
         # self.data['UTILIZATION'] = np.where(self.data['UTILIZATION'] >= 10, 1, 0)
 
@@ -100,7 +101,7 @@ class MEPSData(Data):
                          'ACTLIM', 'SOCLIM', 'COGLIM', 'DFHEAR42', 'DFSEE42', 'ADSMOK42',
                          'PCS42', 'MCS42', 'K6SUM42', 'PHQ242', 'EMPST', 'POVCAT', 'INSCOV', 'UTILIZATION', 'PERWT15F']]
 
-        self.data = self.data.rename(columns={"UTILIZATION": "Probability", "RACE": "race", "SEX": "sex"})
+        self.data = self.data.rename(columns={"UTILIZATION": "Probability", "RACE": "race", "SEX": "sex", "AGE": "age"})
 
     def get_sensitive_column_names(self) -> List[str]:
         """
@@ -108,7 +109,7 @@ class MEPSData(Data):
         :rtype: List[str]
         """
         # returns a list of names
-        return ['race', 'sex']
+        return ['sex']
         # raise NotImplementedError
 
     # def transform(self): # LATER
