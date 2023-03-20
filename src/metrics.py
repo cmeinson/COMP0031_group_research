@@ -8,6 +8,11 @@ import math
 from collections import defaultdict
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
 
+# how do we wanna do metrics?
+class MetricException(Exception):
+    pass
+# we can do just a simple metrcs class with all the mathy functions and then a separate evaluator class?
+
 class Metrics:
     # All available metrics:
     #performance metrics

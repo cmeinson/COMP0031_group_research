@@ -13,6 +13,7 @@ from typing import List, Dict, Any
 from .fairbalance import FairBalanceModel
 from .fairmask import FairMaskModel
 from .reweighing import ReweighingModel
+import time
 
 class Tester:
     OPT_SAVE_INTERMID = "save intermediate results to file"
@@ -86,11 +87,13 @@ class Tester:
             if not same_data_split: self._data.new_data_split()
             
             X, y = self._data.get_train_data()
+            start = time.time()
             model.train(X, y, sensitive_attr, ml_method, bias_ml_method, other)
 
             X, y = self._data.get_test_data()
             predict = lambda x: model.predict(x.copy(), other)
             rep_preds = predict(X)
+            end = time.time()
             try:
                 evals = self._evaluate(Metrics(X, y, rep_preds, predict), metric_names, sensitive_attr)
             except MetricException as e:
@@ -105,7 +108,8 @@ class Tester:
                     self.save_test_results(evals, dataset, bias_mit, ml_method, bias_ml_method, sensitive_attr, same_data_split)
 
         if repetitions!=1:
-            self.save_test_results(self._evals, dataset, bias_mit, ml_method, bias_ml_method, sensitive_attr, same_data_split)
+            runtime = end-start
+            self.save_test_results(self._evals, dataset, bias_mit, ml_method, bias_ml_method, sensitive_attr, same_data_split, runtime)
 
     def get_last_run_preds(self): 
         return self._preds
@@ -179,7 +183,7 @@ class Tester:
 
     def save_test_results(self, evals: Dict[str, Any], dataset: str,
                           bias_mit: str, ml_method: str, bias_ml_method: str,
-                          sensitive_attr: List[str], same_data_split):
+                          sensitive_attr: List[str], same_data_split, runtime):
         nr_samples = np.size(list(evals.values())[0])
 
         entry = {
@@ -190,7 +194,8 @@ class Tester:
             "Bias Mitigation": [bias_mit],
             "ML method": [ml_method],
             "ML bias mit": [bias_ml_method],
-            "Sensitive attrs": [sensitive_attr]
+            "Sensitive attrs": [sensitive_attr],
+            "Running time": runtime,
         }
 
         entry.update({key: [np.average(evals[key])] for key in evals})

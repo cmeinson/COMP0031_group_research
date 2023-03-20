@@ -6,19 +6,19 @@ import time
 
 n_repetitions = 50
 same_data_split = True
-results_filename = "fairbalance_reweighing"
+results_filename = "fairbalance_fairmask"
 other = {Tester.OPT_SAVE_INTERMID: False}
 
 other_fb = other.copy()
 other_fb[BaseModel.OPT_FBALANCE] = True
 
 datasets =  [Tester.ADULT_D, Tester.COMPAS_D]
-mls = [(Tester.BASE_ML, Model.LG_R, None, "FairBalance", other_fb), 
+mls = [(Tester.FAIRMASK, Model.RF_C, Model.DT_R, "FairBalance", other), 
        (Tester.FAIRBALANCE, Model.LG_R, None, "FairBalance", other_fb), 
-
-       (Tester.REWEIGHING, Model.LG_R, None, "FairBalance", other), 
+       (Tester.REWEIGHING, Model.LG_R, None, "FairBalance", other_fb), 
+       (Tester.BASE_ML, Model.LG_R, None, "FairBalance", other_fb), 
 ]
-metric_names = [Metrics.ACC, Metrics.F1, Metrics.M_EOD, Metrics.M_AOD]
+metric_names = Metrics.get_all_names()
 results_file = os.path.join("results",results_filename +".csv")
 
 

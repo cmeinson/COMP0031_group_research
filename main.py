@@ -11,12 +11,9 @@ other = {Tester.OPT_SAVE_INTERMID: False}
 other_fb = other.copy()
 other_fb[BaseModel.OPT_FBALANCE] = True
 
-datasets =  [Tester.ADULT_D, Tester.COMPAS_D, Tester.MEPS_D]#, Tester.GERMAN_D]
+datasets =  [Tester.ADULT_D]
 mls = [(Tester.BASE_ML, Model.LG_R, None, "FairBalance", other_fb), 
        (Tester.FAIRBALANCE, Model.LG_R, None, "FairBalance", other_fb), 
-
-       (Tester.BASE_ML, Model.RF_C, None, None, other), 
-       (Tester.FAIRMASK, Model.RF_C, Model.DT_R, None, other)
 ]
 metric_names = Metrics.get_all_names()
 results_file = os.path.join("results",results_filename +".csv")
