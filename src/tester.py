@@ -105,11 +105,10 @@ class Tester:
                 self._preds.append(rep_preds)
 
                 if repetitions==1 or (self.OPT_SAVE_INTERMID in other and other[self.OPT_SAVE_INTERMID]):
-                    self.save_test_results(evals, dataset, bias_mit, ml_method, bias_ml_method, sensitive_attr, same_data_split)
+                    self.save_test_results(evals, dataset, bias_mit, ml_method, bias_ml_method, sensitive_attr, same_data_split, end-start)
 
         if repetitions!=1:
-            runtime = end-start
-            self.save_test_results(self._evals, dataset, bias_mit, ml_method, bias_ml_method, sensitive_attr, same_data_split, runtime)
+            self.save_test_results(self._evals, dataset, bias_mit, ml_method, bias_ml_method, sensitive_attr, same_data_split, end-start)
 
     def get_last_run_preds(self): 
         return self._preds

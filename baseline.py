@@ -13,12 +13,12 @@ other_fb = other.copy()
 other_fb[BaseModel.OPT_FBALANCE] = True
 
 datasets =  [Tester.ADULT_D, Tester.COMPAS_D]
-mls = [(Tester.FAIRMASK, Model.RF_C, Model.DT_R, "FairBalance", other), 
-       (Tester.FAIRBALANCE, Model.LG_R, None, "FairBalance", other_fb), 
-       (Tester.REWEIGHING, Model.LG_R, None, "FairBalance", other_fb), 
-       (Tester.BASE_ML, Model.LG_R, None, "FairBalance", other_fb), 
+mls = [(Tester.FAIRMASK, Model.RF_C, Model.DT_R, None, other), 
+       (Tester.FAIRBALANCE, Model.LG_R, None, None, other_fb), 
+       (Tester.REWEIGHING, Model.LG_R, None, None, other_fb), 
+       (Tester.BASE_ML, Model.LG_R, None, None, other_fb), 
 ]
-metric_names = Metrics.get_all_names()
+metric_names = [Metrics.ACC, Metrics.F1, Metrics.PRE, Metrics.REC ,Metrics.M_EOD, Metrics.M_AOD, Metrics.DF, Metrics.SF]
 results_file = os.path.join("results",results_filename +".csv")
 
 
