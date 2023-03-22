@@ -24,6 +24,7 @@ class Model:
     # NB: if ur implementation of the class takes more than one file pls put it all into sub folder
     LG_R = "LogisticRegression" 
     DT_R = "DecisionTreeRegressor"
+    GB_R = "GradientBoostingRegressor"
     DT_C = "DecisionTreeClassifier"
     RF_C = "RandomForestClassifier"
     KN_C = "KNearestNeighbours"

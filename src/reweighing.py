@@ -1,9 +1,10 @@
 from .ml_interface import Model
+from collections import Counter
 from typing import List, Dict, Any
 import numpy as np
 import pandas as pd
 
-class FairBalanceModel(Model):
+class ReweighingModel(Model):
 
     def __init__(self, other: Dict[str, Any] = {}) -> None:
         """Idk does not really do much yet I think:)
@@ -32,7 +33,7 @@ class FairBalanceModel(Model):
         self._model = self._get_model(method)
         self.transformer = self._get_transformer(X)
         
-        sample_weight = self.FairBalance(X, y, sensitive_attributes)
+        sample_weight = self.Reweighing(X, y, sensitive_attributes)
         self._model.fit(self.transformer.fit_transform(X), y, sample_weight)
 
 
@@ -49,24 +50,24 @@ class FairBalanceModel(Model):
         """
         return self._model.predict(self.transformer.transform(X))
 
-    def FairBalance(self, X, y, A):
+    def Reweighing(self, X, y, A):
         groups_class = {}
         group_weight = {}
         X.reset_index(drop=True, inplace=True)
 
         for i in range(len(y)):
-            key_class = tuple([X[a][i] for a in A] + [y[i]])
+            key_class = tuple([X[a][i] for a in A]+[y[i]])
             key = key_class[:-1]
-            
             if key not in group_weight:
-                group_weight[key] = 0
-            group_weight[key] += 1
+                group_weight[key]=0
+            group_weight[key]+=1
             if key_class not in groups_class:
-                groups_class[key_class] = []
+                groups_class[key_class]=[]
             groups_class[key_class].append(i)
+        class_weight = Counter(y)
         sample_weight = np.array([1.0]*len(y))
         for key in groups_class:
-            weight = group_weight[key[:-1]]/len(groups_class[key])
+            weight = class_weight[key[-1]]*group_weight[key[:-1]]/len(groups_class[key])
             for i in groups_class[key]:
                 sample_weight[i] = weight
         # Rescale the total weights to len(y)
