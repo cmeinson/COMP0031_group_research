@@ -81,6 +81,10 @@ class Tester:
 
         if self.OPT_SPLIT_RACE_COLS in other and other[self.OPT_SPLIT_RACE_COLS]:
             self._data.split_cat_cols('race')
+            protect_sex = 'sex' in sensitive_attr
+            sensitive_attr = self._data.get_sensitive_column_names().copy()
+            if not protect_sex:
+                sensitive_attr.remove('sex') 
 
         if not sensitive_attr:
             sensitive_attr = self._data.get_sensitive_column_names()        

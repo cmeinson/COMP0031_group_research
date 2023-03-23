@@ -21,6 +21,30 @@ class Data:
         """
         raise NotImplementedError
     
+    def get_race_pos_and_count(self, race = None, not_sex=None):
+        total, count = 0,0
+        for i in range(len(self._y)):
+            if ((race is None or self._X['race'][i] == race) and self._X['sex'][i] != not_sex):
+                count += 1
+                total += self._y[i]
+        return total / count, count
+
+    def print_data_stats(self):
+        print("POS: w, m, tot, COUNT: w, m, tot, for race ")
+        for race in self._X['race'].unique():
+            w_p, w_c = self.get_race_pos_and_count(race, 1)
+            m_p, m_c = self.get_race_pos_and_count(race, 0)
+            a_p, a_c = self.get_race_pos_and_count(race)
+            #print("\nPOS: w:{} m:{} tot:{} \nCOUNT: w:{} m:{} tot:{}\n\t for race {}".format(w_p, m_p, a_p, w_c, m_c, a_c, race))
+            print("{},{},{},{},{},{},{}".format(w_p, m_p, a_p, w_c, m_c, a_c, race))
+
+        w_p, w_c = self.get_race_pos_and_count(None, 1)
+        m_p, m_c = self.get_race_pos_and_count(None, 0)
+        a_p, a_c = self.get_race_pos_and_count(None)
+        #print("\nPOS: w:{} m:{} tot:{} \nCOUNT: w:{} m:{} tot:{}\n\t for total".format(w_p, m_p, a_p, w_c, m_c, a_c, race))
+        print("{},{},{},{},{},{},{}".format(w_p, m_p, a_p, w_c, m_c, a_c, "all"))
+
+    
     def _all_races_in_test_and_train(self):
         if (self._X_test_cat is None): return False
         return set(self._X_test_cat['race'].unique()) == set(self._X_train_cat['race'].unique())
