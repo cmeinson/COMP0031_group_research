@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 from src import reweighing
 
-n_repetitions = 3
+n_repetitions = 20
 same_data_split = True
 results_filename = "FairmMask Results 2"
 other = {Tester.OPT_SAVE_INTERMID: False}
@@ -19,7 +19,7 @@ results_file = os.path.join("results",results_filename +".csv")
 
 ml_methods_for_testing = [Model.DT_C, Model.KN_C, Model.NN_C, Model.NB_C, Model.GB_C, Model.RF_C,Model.SV_C]
 datasets =  [Tester.ADULT_D, Tester.COMPAS_D]
-bias_mit = [Tester.BASE_ML, Tester.FAIRMASK, Tester.REWEIGHING, Tester. FAIRBALANCE]
+bias_mit = [Tester.FAIRMASK]
 
 increased_bias = 0
 
@@ -35,7 +35,7 @@ if __name__ == "__main__":
        file = open("times.txt","w")
        total = 0
        metrics_increased_bias = {}
-       for method1 in [Model.LG_R]:
+       for method1 in ml_methods_for_testing:
               models_runtimes_adult = []
               models_runtimes_compas = []
               for method2 in ml_methods_for_testing:

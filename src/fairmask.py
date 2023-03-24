@@ -36,7 +36,7 @@ class FairMaskModel(Model):
         self._method_bias = method_bias
         self._mask_models = {}
         self._sensitive = sensitive_attributes
-        self.transformer = self._get_transformer(X)
+        # self.transformer = self._get_transformer(X)
 
         X_non_sens = X.copy().drop(columns=self._sensitive)
 
@@ -56,7 +56,9 @@ class FairMaskModel(Model):
             
         # Build the model for the actual prediction
         self._model = self._get_model(method)
-        self._model.fit(self.transformer.fit_transform(X), y)
+        self._model.fit(X, y)
+
+        # self._model.fit(self.transformer.fit_transform(X), y)
              
 
     def predict(self, X: pd.DataFrame, other: Dict[str, Any] = {}) -> np.array:
@@ -71,6 +73,7 @@ class FairMaskModel(Model):
         :rtype: np.array
         """
         X_masked = self._mask(X)
+        return self._model.predict(X_masked)
         return self._model.predict(self.transformer.fit_transform(X_masked))
         
     def _mask(self, X: pd.DataFrame):
@@ -88,6 +91,7 @@ class FairMaskModel(Model):
 
     
         return X_out
+
 
 
     
