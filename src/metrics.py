@@ -38,7 +38,7 @@ class Metrics:
     ONE_DF = "[DF] Differential Fairness for One Attribute"
 
     M_EOD = "[MEOD] M Equal Opportunity Difference"
-    M_AOD = "[MEOD] M Average Odds Difference"
+    M_AOD = "[MAOD] M Average Odds Difference"
 
     warnings.simplefilter("ignore")
 
