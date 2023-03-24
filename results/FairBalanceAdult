@@ -1,0 +1,2 @@
+timestamp,nr samples,same data split,Dataset,Bias Mitigation,ML method,ML bias mit,Sensitive attrs,race|[FR] Flip Rate,sex|[FR] Flip Rate,VAR|race|[FR] Flip Rate,VAR|sex|[FR] Flip Rate
+2023-03-01 14:41:27.872203,1,False,Adult Dataset,FairBalance Bias Mitigation,LogisticRegression,,"['race', 'sex']",0.02579,0.04453,0.0,0.0
