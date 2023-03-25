@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import time
 
-n_repetitions = 1
+n_repetitions = 50
 same_data_split = True
 results_filename = "fairbalance_fairmask"
 other = {Tester.OPT_SAVE_INTERMID: False}

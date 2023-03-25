@@ -3,8 +3,6 @@ import pandas as pd
 import numpy as np
 from typing import List, Dict, Any
 
-
-
 class FairMaskModel(Model):
     def __init__(self, other: Dict[str, Any] = {}) -> None:
         """Idk does not really do much yet I think:)
