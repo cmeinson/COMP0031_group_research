@@ -59,6 +59,7 @@ class AdultData(Data):
         self.dataset_orig['age'] = np.where((self.dataset_orig['age'] >= 20 ) & (self.dataset_orig['age'] < 30), 20, self.dataset_orig['age'])
         self.dataset_orig['age'] = np.where((self.dataset_orig['age'] >= 10 ) & (self.dataset_orig['age'] < 10), 10, self.dataset_orig['age'])
         self.dataset_orig['age'] = np.where(self.dataset_orig['age'] < 10, 0, self.dataset_orig['age'])
+        self.dataset_orig['age'] = np.where(self.dataset_orig['age'] >= 25, 1, 0)
 
     def fairmask_columns(self, X):
         return X.drop(['workclass', 'fnlwgt', 'education', 'marital-status', 'occupation', 'relationship', 'native-country', 'Probability'], axis=1)
@@ -66,11 +67,9 @@ class AdultData(Data):
     def fairbalance_columns(self, X):
         return X.drop(['fnlwgt', 'education', 'Probability'], axis=1)
     
-    def get_sensitive_column_names(self) -> List[str]:
+    def get_sensitive_column_names(self) -> List[List[str]]:
         """
         :return: column names (in the X above) of all sensitive attributes in the given dataset
-        :rtype: List[str]
+        :rtype: List[List[str]]
         """
-        
-        #return ['sex', 'race', 'age', 'Probability'] (is age, income a sensitive attribute?)
-        return ['race', 'sex']
+        return [['sex', 'age', 'race'], ['age', 'race'], ['sex', 'race'], ['sex', 'age'], ['sex'], ['race'], ['age']]

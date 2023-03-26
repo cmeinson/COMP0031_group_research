@@ -42,7 +42,7 @@ class CompasData(Data):
                   'priors_count', 'c_charge_degree', 'c_charge_desc']]
     
     def fairmask_columns(self, X):
-        return X[["sex", "age_cat", "race", "priors_count", "c_charge_degree", "decile_score.1", "priors_count.1"]]
+        return X[["sex", "age", "race", "priors_count", "c_charge_degree", "decile_score.1", "priors_count.1"]]
     
     def pre_processing(self):
         # preprocessing done according to preprocessing.ipynb
@@ -64,21 +64,15 @@ class CompasData(Data):
         self.data['age_cat'] = np.where(self.data['age_cat'] == '25 - 45', 25, self.data['age_cat'])
         self.data['age_cat'] = np.where(self.data['age_cat'] == 'Less than 25', 0, self.data['age_cat'])
         self.data['c_charge_degree'] = np.where(self.data['c_charge_degree'] == 'F', 1, 0)
+        self.data['age'] = np.where(self.data['age'] >= 25, 1, 0)
 
         self.data.rename(index=str, columns={"two_year_recid": "Probability"}, inplace=True)
         self.data['Probability'] = np.where(self.data['Probability'] == 0, 1, 0)
 
-    def get_sensitive_column_names(self) -> List[str]:
+    def get_sensitive_column_names(self) -> List[List[str]]:
         """
         :return: column names (in the X above) of all sensitive attributes in the given dataset
-        :rtype: List[str]
+:rtype: List[List[str]]
         """
-        # returns a list of names
-        return ['sex', 'race'] # For now removed the age cause it eas not used in a ny papers so not relevant in replication ['sex', 'age_cat', 'race']
-        # raise NotImplementedError
+        return [['sex', 'age', 'race'], ['age', 'race'], ['sex', 'race'], ['sex', 'age'], ['sex'], ['race'], ['age']]
 
-    # def transform(self): # LATER
-    #    # will probably rename later. but something for merging attributes into binary ones?
-    #    raise NotImplementedError
-
-# compas = CompasData()

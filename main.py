@@ -3,20 +3,20 @@ from src import *
 
 # Just an example for now
 
-n_repetitions = 2
-same_data_split = True
+n_repetitions = 50
+same_data_split = False
 results_filename = "heheh"
 other = {Tester.OPT_SAVE_INTERMID: False}
 
 other_fb = other.copy()
 other_fb[BaseModel.OPT_FBALANCE] = True
 
-datasets =  [Tester.ADULT_D, Tester.COMPAS_D, Tester.MEPS_D]#, Tester.GERMAN_D]
-mls = [(Tester.BASE_ML, Model.LG_R, None, "FairBalance", other_fb), 
-       (Tester.FAIRBALANCE, Model.LG_R, None, "FairBalance", other_fb), 
+datasets =  [Tester.ADULT_D, Tester.COMPAS_D, Tester.MEPS_D]
+mls = [ (Tester.FAIRBALANCE, Model.LG_R, None, "FairBalance", other_fb),
+        (Tester.BASE_ML, Model.LG_R, None, "FairBalance", other_fb),
+        (Tester.FAIRMASK, Model.RF_C, Model.DT_R, None, other),
+       (Tester.BASE_ML, Model.RF_C, None, None, other)
 
-       (Tester.BASE_ML, Model.RF_C, None, None, other), 
-       (Tester.FAIRMASK, Model.RF_C, Model.DT_R, None, other)
 ]
 metric_names = Metrics.get_all_names()
 results_file = os.path.join("results",results_filename +".csv")

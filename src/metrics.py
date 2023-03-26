@@ -53,7 +53,8 @@ class Metrics:
         self._round = lambda x: round(x,5)
 
     def get_all_names():
-        return Metrics.get_attribute_dependant() + Metrics.get_attribute_independant() + Metrics.get_subgroup_dependant()
+        return [Metrics.M_EOD, Metrics.SF, Metrics.ACC]
+        # return Metrics.get_attribute_dependant() + Metrics.get_attribute_independant() + Metrics.get_subgroup_dependant()
 
     def get_subgroup_dependant():
         # metrics that need a list of attributes as input to create subgroups

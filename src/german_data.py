@@ -41,11 +41,13 @@ class GermanData(Data):
         self.new_data_split()
 
     def fairbalance_columns(self, X):
-        return X[[]]
+        return X[["sex", "age",
+                  "credit_history=Delay", "credit_history=None/Paid", "credit_history=Other",
+                "savings=500+",	"savings=<500",	"savings=Unknown/None",
+                "employment=1-4 years",	"employment=4+ years",	"employment=Unemployed"]]
 
     def fairmask_columns(self, X):
-        #NOT COMPLETE
-        return X[["sex", "age",	"Probability",
+        return X[["sex", "age",
                   "credit_history=Delay", "credit_history=None/Paid", "credit_history=Other",
                 "savings=500+",	"savings=<500",	"savings=Unknown/None",
                 "employment=1-4 years",	"employment=4+ years",	"employment=Unemployed"]]

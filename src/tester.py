@@ -1,18 +1,18 @@
 from os import path
 import pandas as pd
 import numpy as np
+import time
 from .data_interface import Data, DummyData
-from .adult_data import AdultData
 from .compas_data import CompasData
 from .adult_data import AdultData
 from .meps_data import MEPSData
-from .german_data import GermanData
 from .ml_interface import Model, BaseModel
 from .metrics import Metrics, MetricException
 from typing import List, Dict, Any
 from .fairbalance import FairBalanceModel
 from .fairmask import FairMaskModel
 from .reweighing import ReweighingModel
+
 
 class Tester:
     OPT_SAVE_INTERMID = "save intermediate results to file"
@@ -21,7 +21,6 @@ class Tester:
     ADULT_D = "Adult Dataset"
     COMPAS_D = "Compas Dataset"
     MEPS_D = "MEPS Dataset"
-    GERMAN_D = "German Dataset"
     DUMMY_D = "Dummy Dataset"
 
     # Available bias mitigation methods
@@ -38,10 +37,10 @@ class Tester:
         self._evals = None
         self._data = None
 
-    def run_test(self, metric_names: List[str], dataset: str, 
-                 bias_mit: str, ml_method: str, bias_ml_method: str = None, 
-                 repetitions = 1, same_data_split = False,
-                 data_preprocessing: str = None, sensitive_attr: List[str] = None, other={}):        
+    def run_test(self, metric_names: List[str], dataset: str,
+                 bias_mit: str, ml_method: str, bias_ml_method: str = None,
+                 repetitions=1, same_data_split=False,
+                 data_preprocessing: str = None, sensitive_attr: List[str] = None, other={}):
         """Runs the experiments and saves the results into the file given on initialization.
         All the experiments are run with the same data set instances and therefore with the same data splits.
 
@@ -62,7 +61,7 @@ class Tester:
         :param data_preprocessing: name of the data preprocessing method, defaults to None
         :type data_preprocessing: str, optional
         :param sensitive_attr: list of attributes to be proteced if different from the default one in the dataset, defaults to None
-        :type sensitive_attr: List[str], optional
+        :type sensitive_attr: List[List[str]], optional
         :param other: any other params described below, defaults to {}
         :type other: dict, optional
             "other" params:
@@ -73,41 +72,47 @@ class Tester:
         """
         self._exceptions = []
         model = self._get_model(bias_mit, other)
-        self._data = self._get_dataset(dataset,data_preprocessing)
+        self._data = self._get_dataset(dataset, data_preprocessing)
 
-        if not sensitive_attr:
-            sensitive_attr = self._data.get_sensitive_column_names()
+        # if not sensitive_attr:
+        #     sensitive_attr = self._data.get_sensitive_column_names()
 
-        self._preds = []
-        self._evals = None
+        for sensitive_attr in self._data.get_sensitive_column_names():
+            self._preds = []
+            self._evals = None
 
-        rep = 0
-        while (rep < repetitions):
-            if not same_data_split: self._data.new_data_split()
-            
-            X, y = self._data.get_train_data()
-            model.train(X, y, sensitive_attr, ml_method, bias_ml_method, other)
+            rep = 0
+            runtime = 0
+            while (rep < repetitions):
+                if not same_data_split: self._data.new_data_split()
 
-            X, y = self._data.get_test_data()
-            predict = lambda x: model.predict(x.copy(), other)
-            rep_preds = predict(X)
-            try:
-                evals = self._evaluate(Metrics(X, y, rep_preds, predict), metric_names, sensitive_attr)
-            except MetricException as e:
-                print("invalid metric on rep ", rep,  e)
-            else:
-                rep+=1
+                start = time.time()
+                X, y = self._data.get_train_data()
+                model.train(X, y, sensitive_attr, ml_method, bias_ml_method, other)
+                X, y = self._data.get_test_data()
+                predict = lambda x: model.predict(x.copy(), other)
+                rep_preds = predict(X)
+                end = time.time()
 
-                self._acc_evals(evals)
-                self._preds.append(rep_preds)
+                try:
+                    evals = self._evaluate(Metrics(X, y, rep_preds, predict), metric_names, sensitive_attr)
+                    evals['Runtime'] = end - start
+                except MetricException as e:
+                    print("invalid metric on rep ", rep, e)
+                else:
+                    rep += 1
+                    self._acc_evals(evals)
+                    self._preds.append(rep_preds)
+                    if repetitions == 1 or (self.OPT_SAVE_INTERMID in other and other[self.OPT_SAVE_INTERMID]):
+                        runtime = end - start
+                        self.save_test_results(evals, dataset, bias_mit, ml_method, bias_ml_method, sensitive_attr,
+                                               same_data_split, runtime)
 
-                if repetitions==1 or (self.OPT_SAVE_INTERMID in other and other[self.OPT_SAVE_INTERMID]):
-                    self.save_test_results(evals, dataset, bias_mit, ml_method, bias_ml_method, sensitive_attr, same_data_split)
+            if repetitions != 1:
+                self.save_test_results(self._evals, dataset, bias_mit, ml_method, bias_ml_method, sensitive_attr,
+                                       same_data_split, runtime)
 
-        if repetitions!=1:
-            self.save_test_results(self._evals, dataset, bias_mit, ml_method, bias_ml_method, sensitive_attr, same_data_split)
-
-    def get_last_run_preds(self): 
+    def get_last_run_preds(self):
         return self._preds
 
     def get_exceptions(self):
@@ -119,10 +124,10 @@ class Tester:
     def get_last_data_split(self):
         # in case neded for debugging:)
         return *self._data.get_test_data(), *self._data.get_train_data()
-    
+
     def _acc_evals(self, evals):
         if self._evals is None:
-            self._evals = {key:[val] for (key,val) in evals.items()}
+            self._evals = {key: [val] for (key, val) in evals.items()}
         else:
             for (key, val) in evals.items():
                 self._evals[key].append(val)
@@ -139,12 +144,12 @@ class Tester:
                 else:
                     evals[name] = (metrics.get(name))
             except MetricException as e:
-                self._exceptions.append([e,name])
+                self._exceptions.append([e, name])
                 raise e
         return evals
 
-    def _get_dataset(self, name:str, preprocessing:str) -> Data:
-        dataset_description = name if not preprocessing else name+preprocessing
+    def _get_dataset(self, name: str, preprocessing: str) -> Data:
+        dataset_description = name if not preprocessing else name + preprocessing
         if dataset_description in self._initd_data:
             return self._initd_data[dataset_description]
 
@@ -155,8 +160,6 @@ class Tester:
             data = CompasData(preprocessing)
         elif name == self.MEPS_D:
             data = MEPSData(preprocessing)
-        elif name == self.GERMAN_D:
-            data = GermanData(preprocessing)
         elif name == self.DUMMY_D:
             data = DummyData(preprocessing)
         else:
@@ -179,7 +182,7 @@ class Tester:
 
     def save_test_results(self, evals: Dict[str, Any], dataset: str,
                           bias_mit: str, ml_method: str, bias_ml_method: str,
-                          sensitive_attr: List[str], same_data_split):
+                          sensitive_attr: List[str], same_data_split, runtime):
         nr_samples = np.size(list(evals.values())[0])
 
         entry = {
@@ -190,13 +193,13 @@ class Tester:
             "Bias Mitigation": [bias_mit],
             "ML method": [ml_method],
             "ML bias mit": [bias_ml_method],
-            "Sensitive attrs": [sensitive_attr]
+            "Sensitive attrs": [sensitive_attr],
+            "Runtime": [runtime]
         }
 
         entry.update({key: [np.average(evals[key])] for key in evals})
-        entry.update({"VAR|"+key: [np.var(evals[key])] for key in evals})
+        entry.update({"VAR|" + key: [np.var(evals[key])] for key in evals})
         res = pd.DataFrame(entry)
-
 
         if self._file and path.exists(self._file):
             res = pd.concat([res, pd.read_csv(self._file)], ignore_index=True)

@@ -103,15 +103,9 @@ class MEPSData(Data):
 
         self.data = self.data.rename(columns={"UTILIZATION": "Probability", "RACE": "race", "SEX": "sex", "AGE": "age"})
 
-    def get_sensitive_column_names(self) -> List[str]:
+    def get_sensitive_column_names(self) -> List[List[str]]:
         """
         :return: column names (in the X above) of all sensitive attributes in the given dataset
-        :rtype: List[str]
+:rtype: List[List[str]]
         """
-        # returns a list of names
-        return ['sex']
-        # raise NotImplementedError
-
-    # def transform(self): # LATER
-    #    # will probably rename later. but something for merging attributes into binary ones?
-    #    raise NotImplementedError
+        return [['sex', 'age', 'race'], ['age', 'race'], ['sex', 'race'], ['sex', 'age'], ['sex'], ['race'], ['age']]
