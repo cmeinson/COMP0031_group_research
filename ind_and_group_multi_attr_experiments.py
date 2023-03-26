@@ -1,11 +1,9 @@
 import os
 from src import *
 
-# Just an example for now
-
 n_repetitions = 50
-same_data_split = True
-results_filename = "both"
+same_data_split = False
+results_filename = "ind_and_group_multi_attr"
 other = {Tester.OPT_SAVE_INTERMID: False}
 
 other_fb = other.copy()
