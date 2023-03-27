@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from src import reweighing
 
 n_repetitions = 20
-same_data_split = True
+same_data_split = False     #rerun the tests with this as false and record the results, change the tables
 results_filename = "FairmMask Results 2"
 other = {Tester.OPT_SAVE_INTERMID: False}
 
@@ -19,7 +19,7 @@ results_file = os.path.join("results",results_filename +".csv")
 
 ml_methods_for_testing = [Model.DT_C, Model.KN_C, Model.NN_C, Model.NB_C, Model.GB_C, Model.RF_C,Model.SV_C]
 datasets =  [Tester.ADULT_D, Tester.COMPAS_D]
-bias_mit = [Tester.FAIRMASK]
+bias_mit = [Tester.FAIRMASK, Tester.BASE_ML]
 
 increased_bias = 0
 
