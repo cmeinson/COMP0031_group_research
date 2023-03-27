@@ -385,3 +385,49 @@ class Metrics:
         X_flip = self._X.copy()
         X_flip[attribute] = np.where(X_flip[attribute]==1, 0, 1)
         return X_flip
+
+
+# Get results
+# predict_df = pd.read_csv('./FinalResults/FairBalanceAdultPredict.csv')
+# predict_df_preds = predict_df['R'].to_numpy()
+
+# input_df = pd.read_csv('./FinalResults/FairBalanceAdultInput.csv')
+# input_df_preds = input_df['R'].to_numpy()
+
+# base_df = pd.read_csv('./FinalResults/FairBalanceAdultBase.csv')
+# base_df_preds = base_df['R'].to_numpy()
+
+# df_X = predict_df.loc[:, predict_df.columns != 'R']
+
+# Change which subgroup is chosen
+# predict_sg = predict_df.copy()
+# predict_sg_drop = predict_sg[predict_sg['race'] == 0]
+# predict_sg_drop = predict_sg_drop[predict_sg_drop['sex'] == 0]
+# predict_sg_preds = predict_sg_drop['R'].to_numpy()
+
+# input_sg = input_df.copy()
+# input_sg_drop = input_sg[input_sg['race'] == 0]
+# input_sg_drop = input_sg_drop[input_sg_drop['sex'] == 0]
+# input_sg_preds = input_sg_drop['R'].to_numpy()
+
+# sg_X = predict_sg_drop.loc[:, predict_sg_drop.columns != 'R']
+# print(sg_X.head())
+# sg_X.to_csv('sg_x.csv', index=False)
+
+
+# met = Metrics(df_X, input_df_preds, predict_df_preds, predict_df['R'])
+# met = Metrics(wm_X, input_wm_preds, predict_wm_preds, predict_wm)
+# atts = ['sex', 'race']
+# acc = met.accuracy()
+# tpr = met.tprs()
+# fpr = met.fprs()
+# f1 = met.f1score()
+
+# print("acc", acc)
+# print("df", df)
+# print("sf", sf)
+# print("maod", maod)
+# print("meod", meod)
+# print("tpr", tpr)
+# print("fpr", fpr)
+# print("f1", f1)
